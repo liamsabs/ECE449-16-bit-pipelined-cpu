@@ -4,8 +4,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity FullAdder_1bit is 
-    Port ( a, b, Cin : in std_logic;
-       Sum, Cout : out std_logic );
+    Port (
+        a, b, Cin : in std_logic;
+        Sum, Cout : out std_logic 
+    );
 end FullAdder_1bit;
 
 architecture Behavioral of FullAdder_1bit is 
@@ -21,10 +23,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity FullAdder_16bit is
-    Port (A, B: in std_logic_vector (15 downto 0);
+    Port (
+        A, B: in std_logic_vector (15 downto 0);
         Cin: in std_logic;
         Sum: out std_logic_vector (15 downto 0); 
-        Cout : out std_logic);
+        Cout : out std_logic
+    );
 end FullAdder_16bit;
 
 architecture Behavioral of FullAdder_16bit is
@@ -65,11 +69,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity adderSubtractor_16bit is
-    Port (A, B : in std_logic_vector (15 downto 0);
+    Port (
+        A, B : in std_logic_vector (15 downto 0);
          Sub : in std_logic;
          Sum : out std_logic_vector (15 downto 0);
          Cout : out std_logic;
-        );
+    );
 end adderSubtractor_16bit;
 
 architecture behavioral of AdderSubtractor_16bit is
@@ -88,7 +93,7 @@ architecture behavioral of AdderSubtractor_16bit is
             Bsub(i) <= B(i) xor Sub;    
         end loop;
 
-        Add: FullAdder_16bit port map (A, B, Sub, Sum, Cout);
+        Add: FullAdder_16bit port map (A, Bsub, Sub, Sum, Cout);
         
 end behavioral;
 ------------------------------------------------------------------------------
