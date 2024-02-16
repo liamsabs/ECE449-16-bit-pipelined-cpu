@@ -2,12 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity barrelshift_16bit is
-    port (
-        direction   : in  std_logic;            -- Left 1 and Right 0
+    port ( direction   : in  std_logic;            -- Left 1 and Right 0
         shiftamount : in  std_logic_vector(3 downto 0); -- amount to shift (up to 15)
         A           : in  std_logic_vector(15 downto 0);
-        Result      : out std_logic_vector(15 downto 0)
-    );
+        Result      : out std_logic_vector(15 downto 0) );
 end barrelshift_16bit;
 
 architecture behavioral of barrelshift_16bit is

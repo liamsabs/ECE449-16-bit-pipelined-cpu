@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_AdderSubtractor_16bit is
-end entity tb_AdderSubtractor_16bit;
+entity adder_subtractor_tb is
+end entity adder_subtractor_tb;
 
-architecture testbench of tb_AdderSubtractor_16bit is
+architecture testbench of adder_subtractor_tb is
     -- Signals
     signal A, B, Sum: std_logic_vector(15 downto 0);
     signal Sub, Cout: std_logic;
@@ -27,11 +27,10 @@ architecture testbench of tb_AdderSubtractor_16bit is
         stimulus_process: process
         begin
             -- Test case 1: Addition
-            A <= "0000000000001111";
+            A <= "1111111111111111";
             B <= "0000000000001111";
             Sub <= '0';
             wait for 40 ns;
-
             -- Test case 2: Subtraction
             A <= "1111111111001011";
             B <= "0000000000001111";
@@ -52,9 +51,6 @@ architecture testbench of tb_AdderSubtractor_16bit is
             B <= "1000111111111111";
             Sub <= '1';
             wait for 40 ns;
-
-           
-
             -- Add more test cases as needed
 
             wait;

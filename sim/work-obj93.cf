@@ -1,0 +1,11 @@
+v 4
+file . "../test/adder_subtractor_tb.vhd" "6605315c4b218f16c83f3689c376ae9ebebb015d" "20240216222416.109":
+  entity adder_subtractor_tb at 1( 0) + 0 on 17;
+  architecture testbench of adder_subtractor_tb at 8( 133) + 0 on 18;
+file . "../src/adder_subtractor_16bit.vhd" "b0019c04c896e5bde76a57979fe71ddc4ea47765" "20240216222416.072":
+  entity fulladder_1bit at 3( 80) + 0 on 11;
+  architecture behavioral of fulladder_1bit at 13( 256) + 0 on 12;
+  entity fulladder_16bit at 22( 546) + 0 on 13;
+  architecture behavioral of fulladder_16bit at 34( 810) + 0 on 14;
+  entity addersubtractor_16bit at 68( 2629) + 0 on 15;
+  architecture behavioral of addersubtractor_16bit at 80( 2907) + 0 on 16;
