@@ -2,10 +2,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity adder_subtractor_tb is
-end entity adder_subtractor_tb;
+entity addersubtractor_tb is
+end entity addersubtractor_tb;
 
-architecture testbench of adder_subtractor_tb is
+architecture testbench of addersubtractor_tb is
     -- Signals
     signal A, B, Sum: std_logic_vector(15 downto 0);
     signal Sub, Cout: std_logic;
