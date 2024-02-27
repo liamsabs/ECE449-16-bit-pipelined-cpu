@@ -1,106 +1,64 @@
--- 16 x 8 Register File
-------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+--use ieee.std_logic_unsigned.all;
 
-entity RegisterFile_16bit is
-    port (
-        RA_En, RB_En, WA_En, WB_En, Clk, Reset : in std_logic;
-        RA_Addr, RB_Addr, WA_Addr, WB_Addr : in std_logic_vector(2 downto 0);
-        WA_In, WB_In: in std_logic_vector(15 downto 0);
-        RA_Out, RB_Out: out std_logic_vector(15 downto 0)
-    );
-end RegisterFile_16bit;
+entity register_file is
+port(rst : in std_logic; clk: in std_logic;
+--read signals
+rd_index1: in std_logic_vector(2 downto 0); 
+rd_index2: in std_logic_vector(2 downto 0); 
+rd_data1: out std_logic_vector(15 downto 0); 
+rd_data2: out std_logic_vector(15 downto 0);
+--write signals
+wr_index: in std_logic_vector(2 downto 0); 
+wr_data: in std_logic_vector(15 downto 0); wr_enable: in std_logic);
+end register_file;
 
-architecture behavioral of RegisterFile_16bit is
-    -- Signal 
-    signal R0, R1, R2, R3, R4, R5, R6, R7 : std_logic_vector (15 downto 0);
+architecture behavioural of register_file is
 
+type reg_array is array (integer range 0 to 7) of std_logic_vector(15 downto 0);
+--internals signals
+signal reg_file : reg_array; begin
+--write operation 
+process(clk)
 begin
-    process (Clk, Reset)
-    begin
-        if Reset = '1' then
-            -- Reset conditions
-            R0 <= (others => '0');
-            R1 <= (others => '0');
-            R2 <= (others => '0');
-            R3 <= (others => '0');
-            R4 <= (others => '0');
-            R5 <= (others => '0');
-            R6 <= (others => '0');
-            R7 <= (others => '0');
-        elsif rising_edge(Clk) then
-            -- Writing to Write A port
-            if WA_En = '1' then
-                case WA_Addr is
-                    when "000" =>
-                        R0 <= WA_In;
-                    when "001" =>
-                        R1 <= WA_In;
-                    when "010" =>
-                        R2 <= WA_In;
-                    when "011" =>
-                        R3 <= WA_In;
-                    when "100" =>
-                        R4 <= WA_In;
-                    when "101" =>
-                        R5 <= WA_In;
-                    when "110" =>
-                        R6 <= WA_In;
-                    when "111" =>
-                        R7 <= WA_In;
-                    when others =>
-                        assert false report "Unexpected WA_Addr value" severity failure;
-                end case;
-            end if;
+   if(clk='0' and clk'event) then if(rst='1') then
+      for i in 0 to 7 loop
+         reg_file(i)<= (others => '0'); 
+      end loop;
+   elsif(wr_enable= '1') then
+      case wr_index(2 downto 0) is
+      when "000" => reg_file(0) <= wr_data;
+      when "001" => reg_file(1) <= wr_data;
+      when "010" => reg_file(2) <= wr_data;
+      when "011" => reg_file(3) <= wr_data;
+      when "100" => reg_file(4) <= wr_data;
+      when "101" => reg_file(5) <= wr_data;
+      when "110" => reg_file(6) <= wr_data;
+      when "111" => reg_file(7) <= wr_data;
+      when others => NULL; end case;
+    end if; 
+    end if;
+end process;
 
-            -- Writing to Write B port
-            if WB_En = '1' then
-                case WB_Addr is
-                    when "000" =>
-                        R0 <= WB_In;
-                    when "001" =>
-                        R1 <= WB_In;
-                    when "010" =>
-                        R2 <= WB_In;
-                    when "011" =>
-                        R3 <= WB_In;
-                    when "100" =>
-                        R4 <= WB_In;
-                    when "101" =>
-                        R5 <= WB_In;
-                    when "110" =>
-                        R6 <= WB_In;
-                    when "111" =>
-                        R7 <= WB_In;
-                    when others =>
-                        assert false report "Unexpected WB_Addr value" severity failure;
-                end case;
-            end if;
+--read operation
+rd_data1 <=	
+reg_file(0) when(rd_index1="000") else
+reg_file(1) when(rd_index1="001") else
+reg_file(2) when(rd_index1="010") else
+reg_file(3) when(rd_index1="011") else
+reg_file(4) when(rd_index1="100") else
+reg_file(5) when(rd_index1="101") else
+reg_file(6) when(rd_index1="110") else reg_file(7);
 
-            -- Read to Read A port
-            if RA_En = '1' then 
-                RA_Out <= R0 when RA_Addr = "000" else
-                          R1 when RA_Addr = "001" else
-                          R2 when RA_Addr = "010" else
-                          R3 when RA_Addr = "011" else
-                          R4 when RA_Addr = "100" else
-                          R5 when RA_Addr = "101" else
-                          R6 when RA_Addr = "110" else
-                          R7 when RA_Addr = "111";
-            end if;
+rd_data2 <=
+reg_file(0) when(rd_index1="000") else
+reg_file(1) when(rd_index1="001") else
+reg_file(2) when(rd_index1="010") else
+reg_file(3) when(rd_index1="011") else
+reg_file(4) when(rd_index1="100") else
+reg_file(5) when(rd_index1="101") else
+reg_file(6) when(rd_index1="110") else reg_file(7);
 
-            -- Read to Read B port
-            if RB_En = '1' then
-                RB_Out <= R0 when RB_Addr = "000" else
-                          R1 when RB_Addr = "001" else
-                          R2 when RB_Addr = "010" else
-                          R3 when RB_Addr = "011" else
-                          R4 when RB_Addr = "100" else
-                          R5 when RB_Addr = "101" else
-                          R6 when RB_Addr = "110" else
-                          R7 when RB_addr = "111";
-            end if;
-        end if;
-    end process;
-end behavioral;
+end behavioural;
