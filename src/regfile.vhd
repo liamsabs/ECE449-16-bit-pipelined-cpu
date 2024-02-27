@@ -80,26 +80,26 @@ begin
 
             -- Read to Read A port
             if RA_En = '1' then 
-                RA_Out <= R0 when RA_Addr = "000",
-                          R1 when RA_Addr = "001",
-                          R2 when RA_Addr = "010",
-                          R3 when RA_Addr = "011",
-                          R4 when RA_Addr = "100",
-                          R5 when RA_Addr = "101",
-                          R6 when RA_Addr = "110",
+                RA_Out <= R0 when RA_Addr = "000" else
+                          R1 when RA_Addr = "001" else
+                          R2 when RA_Addr = "010" else
+                          R3 when RA_Addr = "011" else
+                          R4 when RA_Addr = "100" else
+                          R5 when RA_Addr = "101" else
+                          R6 when RA_Addr = "110" else
                           R7 when RA_Addr = "111";
             end if;
 
             -- Read to Read B port
             if RB_En = '1' then
-                RB_Out <= R0 when RB_Addr = "000",
-                          R1 when RB_Addr = "001",
-                          R2 when RB_Addr = "010",
-                          R3 when RB_Addr = "011",
-                          R4 when RB_Addr = "100",
-                          R5 when RB_Addr = "101",
-                          R6 when RB_Addr = "110",
-                          R7 when RB_Addr = "111";
+                RB_Out <= R0 when RB_Addr = "000" else
+                          R1 when RB_Addr = "001" else
+                          R2 when RB_Addr = "010" else
+                          R3 when RB_Addr = "011" else
+                          R4 when RB_Addr = "100" else
+                          R5 when RB_Addr = "101" else
+                          R6 when RB_Addr = "110" else
+                          R7 when RB_addr = "111";
             end if;
         end if;
     end process;
