@@ -18,10 +18,10 @@ architecture behavioral of incrementor is
 
     component FullAdder_16bit is
         port(
-            A   : in std_logic_vector(15 downto 0);
-            B   : in std_logic_vector(15 downto 0);
-            C   : out std_logic_vector(15 downto 0);
-            Cout: out std_logic;
+            A, B    : in std_logic_vector (15 downto 0);
+            Cin     : in std_logic;
+            Sum     : out std_logic_vector (15 downto 0); 
+            Cout    : out std_logic;
         );
     end component;
 
