@@ -6,7 +6,7 @@ entity barrelshift_16bit is
         direction   : in  std_logic;            -- Left 1 and Right 0
         shiftamount : in  std_logic_vector(3 downto 0); -- amount to shift (up to 15)
         A           : in  std_logic_vector(15 downto 0);
-        Result      : out std_logic_vector(15 downto 0) );
+        shiftedresult      : out std_logic_vector(15 downto 0) );
 end barrelshift_16bit;
 
 architecture behavioral of barrelshift_16bit is
@@ -43,9 +43,9 @@ begin
                 end if;
                 
                 if shiftamount(0) = '1' then --shift 1
-                    Result <= '0' & T3(15 downto 1);
+                    shiftedresult <= '0' & T3(15 downto 1);
                 else
-                    Result <= T3;
+                    shiftedresult <= T3;
                 end if;
 
             -- shift left
@@ -69,14 +69,14 @@ begin
                 end if;
                 
                 if shiftamount(0) = '1' then --shift 1
-                    Result <= T3(14 downto 0) & '0';
+                    shiftedresult <= T3(14 downto 0) & '0';
                 else
-                    Result <= T3;
+                    shiftedresult <= T3;
                 end if;
                 
             when others =>
                 -- Handle undefined cases
-                Result <= (others => 'X');
+                shiftedresult <= (others => 'X');
         end case;
     end process;
 end behavioral;
