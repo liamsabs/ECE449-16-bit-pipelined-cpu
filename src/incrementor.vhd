@@ -31,3 +31,5 @@ begin
     fetch_mem <= I2;    -- Is returned value an address to fetch for branch location
 
 end behavioral;
+
+--commenting
