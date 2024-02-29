@@ -1,39 +1,43 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+ 
+library ieee; 
+use ieee.std_logic_1164.all; 
+use ieee.std_logic_unsigned.all; 
+use work.all;
 
-entity regfile_tb is 
-end entity regfile_tb;
+entity REGFILE_tb is end REGFILE_tb;
 
-architecture testbench of regfile is
-signal RA_En, RB_En, WA_En, WB_En, Clk, Reset : std_logic;
-signal RA_Addr, RB_Addr, WA_Addr, WB_Addr : std_logic_vector(2 downto 0);
-signal WA_In, WB_In, RA_Out, RB_Out:std_logic_vector(15 downto 0);
-
-component RegisterFile_16bit is
-    port (
-        RA_En, RB_En, WA_En, WB_En, Clk, Reset : in std_logic;
-        RA_Addr, RB_Addr, WA_Addr, WB_Addr : in std_logic_vector(2 downto 0);
-        WA_In, WB_In: in std_logic_vector(15 downto 0);
-        RA_Out, RB_Out: out std_logic_vector(15 downto 0)
-    );
-end component;
-
+architecture behavioural of REGFILE_tb is
+component register_file port(rst : in std_logic; clk: in std_logic; 
+rd_index1, rd_index2: in std_logic_vector(2 downto 0);
+rd_data1, rd_data2: out std_logic_vector(15 downto 0); 
+wr_index: in std_logic_vector(2 downto 0); 
+wr_data: in std_logic_vector(15 downto 0); wr_enable: in std_logic);
+end component; 
+signal rst, clk, wr_enable : std_logic; 
+signal rd_index1, rd_index2, wr_index : std_logic_vector(2 downto 0); 
+signal rd_data1, rd_data2, wr_data : std_logic_vector(15 downto 0); 
 begin
-process(RA_En, Rb_En, WA_En, WB_En, Clk, Reset,
- RA_Addr, RB_Addr, WA_Addr, WB_Addr, 
- WA_In, WB_In, 
- RA_Out, RB_Out)
-
- begin
-    UUT: RegisterFile_16bit port map (RA_En, Rb_En, WA_En, WB_En, Clk, Reset,
-        RA_Addr, RB_Addr, WA_Addr, WB_Addr, 
-        WA_In, WB_In, 
-        RA_Out, RB_Out);
-
-    stimulus_process: process
-    begin
-
-
-    end process stimulus_process;
-end architecture testbench;
+u0:register_file port map(rst, clk, rd_index1, rd_index2, rd_data1, rd_data2, wr_index, wr_data, wr_enable);
+process begin
+clk <= '0'; wait for 10 us;
+clk<='1'; wait for 10 us; 
+end process;
+process  begin
+rst <= '1'; rd_index1 <= "000"; rd_index2 <= "000"; wr_enable <= '0'; wr_index <= "000";
+wr_data <= X"0000";
+wait until (clk='0' and clk'event); wait until (clk='1' and clk'event); wait until (clk='1' and clk'event);
+rst <= '0';
+wait until (clk='1' and clk'event); wr_enable <= '1'; wr_data <= X"200a";
+wait until (clk='1' and clk'event); wr_index <= "001"; wr_data <= X"0037";
+wait until (clk='1' and clk'event); wr_index <= "010"; wr_data <= X"8b00";
+wait until (clk='1' and clk'event); wr_index <= "101"; wr_data <= X"f00d";
+wait until (clk='1' and clk'event); wr_index <= "110"; wr_data <= X"00fd";
+wait until (clk='1' and clk'event); wr_index <= "111"; wr_data <= X"fd00";
+wait until (clk='1' and clk'event); wr_enable <= '0';
+wait until (clk='1' and clk'event); rd_index2 <= "001";
+wait until (clk='1' and clk'event); rd_index1 <= "010";
+wait until (clk='1' and clk'event); rd_index2 <= "101";
+wait until (clk='1' and clk'event); rd_index1 <= "110";
+rd_index2 <= "111"; wait;
+end process;
+end behavioural;
