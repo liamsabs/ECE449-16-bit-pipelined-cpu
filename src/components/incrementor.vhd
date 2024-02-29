@@ -16,18 +16,27 @@ end incrementor;
 architecture behavioral of incrementor is
     signal I1, I2 : std_logic_vector(15 downto 0);
 
-begin
-    with control_inc select
-        I1  <=  "0000000000000100"  when "00",      -- Normal increment
-                "0000000000000000"  when "01",      -- NOP
-                displacement        when "10",      -- Displacement
-                "0000000000000000"  when others;    -- Everything Else
+    component FullAdder_16bit is
+        port(
+            A, B    : in std_logic_vector (15 downto 0);
+            Cin     : in std_logic;
+            Sum     : out std_logic_vector (15 downto 0); 
+            Cout    : out std_logic;
+        );
+    end component;
 
-    with control_prev select
-        I2 <=   PC_prev         when "0",       -- Add to previous PC
-                branch_address  when "1";       -- Add to branch destination
-        
-    PC <= I1 + I2;
-    fetch_mem <= I2;    -- Is returned value an address to fetch for branch location
+    begin
+        with control_inc select
+            I1  <=  "0000000000000100"  when "00",      -- Normal increment by 4
+                    "0000000000000000"  when "01",      -- NOP
+                    displacement        when "10",      -- Displacement
+                    "0000000000000000"  when others;    -- Everything Else
+
+        with control_prev select
+            I2 <=   PC_prev         when "0",       -- Add to previous PC
+                    branch_address  when "1";       -- Add to branch destination
+            
+        Add : FullAdder_16bit port map (I1, I2, 0, PC);
+        fetch_mem <= I2;    -- Is returned value an address to fetch for branch location
 
 end behavioral;
