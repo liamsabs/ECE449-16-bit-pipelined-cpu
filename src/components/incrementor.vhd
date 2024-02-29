@@ -27,8 +27,8 @@ architecture behavioral of incrementor is
 
     begin
         with control_inc select
-            I1  <=  "0000000000000100"  when "00",      -- Normal increment by 4
-                    "0000000000000000"  when "01";      -- NOP
+            I1  <=  "0000000000000100"  when "1",      -- Normal increment by 4
+                    "0000000000000000"  when "0";      -- NOP
 
         with control_prev select
             I2  <=   PC_prev         when "0",       -- Add to previous PC
