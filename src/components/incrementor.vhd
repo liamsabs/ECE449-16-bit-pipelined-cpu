@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 
 entity incrementor is
     port(
-        control_inc     : in std_logic_vector(1 downto 0);
+        control_inc     : in std_logic;
         control_prev    : in std_logic;
         displacement    : in std_logic_vector(15 downto 0);
         branch_address  : in std_logic_vector(5 downto 0);
@@ -27,14 +27,12 @@ architecture behavioral of incrementor is
 
     begin
         with control_inc select
-            I1  <=  "0000000000000100"  when "00",      -- Normal increment by 4
-                    "0000000000000000"  when "01",      -- NOP
-                    displacement        when "10",      -- Displacement
-                    "0000000000000000"  when others;    -- Everything Else
+            I1  <=  "0000000000000100"  when "1",      -- Normal increment by 4
+                    "0000000000000000"  when "0";      -- NOP
 
         with control_prev select
-            I2 <=   PC_prev         when "0",       -- Add to previous PC
-                    branch_address  when "1";       -- Add to branch destination
+            I2  <=   PC_prev         when "0",       -- Add to previous PC
+                     branch_address  when "1";       -- Add to branch destination
             
         Add : FullAdder_16bit port map (I1, I2, 0, PC);
         fetch_mem <= I2;    -- Is returned value an address to fetch for branch location
