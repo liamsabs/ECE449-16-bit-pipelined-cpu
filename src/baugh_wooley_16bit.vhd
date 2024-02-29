@@ -177,17 +177,15 @@ end baugh_wooley_16bit;
 
 architecture Functional of baugh_wooley is
     signal carry_in : std_logic_vector(15 downto 0);
-    signal sum_in : std_logic_vector(15 downto 0);
     signal carry_out : std_logic_vector(15 downto 0);
-    signal sum_out : std_logic_vector(14 downto 0);
+    signal sum_in : std_logic_vector(15 downto 0);
+    signal sum_out : std_logic_vector(15 downto 0);
+    signal adder_carry : std_logic_vector(15 downto 0);
     
-    component FullAdder_16bit is
+    component FullAdder_1bit is
         port(
-            A   : in std_logic_vector(15 downto 0);
-            B   : in std_logic_vector(15 downto 0);
-            Cin : in std_logic;
-            C   : out std_logic_vector(15 downto 0);
-            Cout: out std_logic
+            a, b, Cin: in std_logic;
+            Sum, Cout: out std_logic
         );
     end component;
 
@@ -199,7 +197,7 @@ architecture Functional of baugh_wooley is
             Si      : in std_logic_vector(15 downto 0);
             Cout    : out std_logic_vector(15 downto 0);
             Sout    : out std_logic_vector(15 downto 1); 
-            Sout0   : out std_logic;
+            Sout0   : out std_logic
         );
     end component;
 
@@ -211,14 +209,36 @@ architecture Functional of baugh_wooley is
             Si      : in std_logic_vector(15 downto 0);
             Cout    : out std_logic_vector(15 downto 0);
             Sout    : out std_logic_vector(15 downto 1); 
-            Sout0   : out std_logic;
+            Sout0   : out std_logic
         );
     end component;
 
     begin
         overall : process(clk)
         begin
-            line0   :   baugh_wooley_first_lines port map (A, B(0), "0000000000000000", "0000000000000000", )
-                
+            
+            carry_in <= "0000000000000000";
+            sum_in <= "0000000000000000";
+            adder_carry <= "0000000000000001";
+
+            variable i : integer := 0;
+            variable j : integer := 1;
+
+            while i < 15 loop
+                baugh_wooley_first_lines port map (A, B(i), carry_in, sum_in, carry_out, sum_out, C_low(i));
+                carry_in <= carry_out;
+                sum_in <= sum_out;
+            end loop;
+            
+            baugh_wooley_last_line port map (A, B(15), carry_in, sum_in, carry_out, sum_out, C_low(15));
+            carry_out(15) <= "1";
+            DONE_low <= "1";
+            
+            while < 15 loop
+                FullAdder_1bit port map (sum_out(j+1), carry_out(j), adder_carry(j-1), C_high(j), adder_carry(j));
+            end loop;
+            FullAdder_1bit port map ("1", carry_out(15), adder_carry(14), C_high(15), adder_carry(15));
+            DONE_high <= "1";
+
 
 end Functional;       
