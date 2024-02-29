@@ -241,4 +241,4 @@ architecture Functional of baugh_wooley is
             DONE_high <= "1";
 
 
-end Functional;       
+end Functional;           
