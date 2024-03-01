@@ -251,6 +251,7 @@ architecture Functional of baugh_wooley_16bit is
             end generate G2;
             
             FullAdder_1bit port map ("1", BW_carry_out(15), BW_adder_carry(14), C_high_internal(15), BW_adder_carry(15));
+            
             C_high <= C_high_internal;
             DONE_high <= "1";
 
