@@ -225,37 +225,40 @@ architecture Functional of baugh_wooley_16bit is
 
     begin
 
-        carry_in <= "0000000000000000";
-        sum_in <= "0000000000000000";
-        adder_carry <= "0000000000000001";
+        BW_carry_in <= "0000000000000000";
+        BW_sum_in <= "0000000000000000";
+        BW_adder_carry <= "0000000000000001";
         A_internal <= BW_A;
         B_internal <= BW_B;
+
+            G1 :  for i in 0 to 15 generate
+                first_lines     :   baugh_wooley_first_lines port map (
+                    A_internal,
+                    B_internal(i), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(i));
+                    BW_carry_in <= BW_carry_out;
+                    BW_sum_in <= BW_sum_out;
+            end generate G1;
+            
+            last_line   :   baugh_wooley_last_line port map (A_internal, B_internal(15), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(15));
+
+            
+             G2 : for j in 0 to 15 generate
+                    adder : FullAdder_1bit port map (BW_sum_out(j+1), BW_carry_out(j), BW_adder_carry(j-1), C_high_internal(j), BW_adder_carry(j));
+             end generate G2;
+
 
         overall : process(clk)
         begin
             
  -- LN: 239, 244, 249, 251 TODO fixing port map format
-            G1 :  for i in 0 to 15 generate
-                first_lines     :   baugh_wooley_first_lines port map (A_internal, B_internal(i), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(i));
-                BW_carry_in <= BW_carry_out;
-                BW_sum_in <= BW_sum_out;
-            end generate G1;
-            
-            last_line   :   baugh_wooley_last_line port map (A_internal, B_internal(15), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(15));
-            carry_out(15) <= "1";
             C_low <= C_low_internal;
-            DONE_low <= "1";
-            
-            G2 : for j in 0 to 15 generate
-                FullAdder_1bit port map (BW_sum_out(j+1), BW_carry_out(j), BW_adder_carry(j-1), C_high_internal(j), BW_adder_carry(j));
-            end generate G2;
+            DONE_low <= '1';
             
             FullAdder_1bit port map ("1", BW_carry_out(15), BW_adder_carry(14), C_high_internal(15), BW_adder_carry(15));
             
             C_high <= C_high_internal;
-            DONE_high <= "1";
+            DONE_high <= '1';
 
             end process;
         
 end Functional; 
-
