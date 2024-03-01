@@ -1,20 +1,18 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity incrementor is
+entity FETCH is
     port(
-        control_inc     : in std_logic;
-        control_prev    : in std_logic;
-        displacement    : in std_logic_vector(15 downto 0);
-        branch_address  : in std_logic_vector(5 downto 0);
-        PC_prev         : in std_logic_vector(15 downto 0);
+        CONTROL_OP      : in std_logic_vector(1 downto 0);
+        branch_address  : in std_logic_vector(15 downto 0);
+        PC_init         : in std_logic_vector(15 downto 0); 
         PC              : out std_logic_vector(15 downto 0);
-        fetch_mem       : out std_logic;
     );
-end incrementor;
+end FETCH;
 
-architecture behavioral of incrementor is
+architecture behavioral of FETCH is
     signal I1, I2 : std_logic_vector(15 downto 0);
+    signal PC_prev : std_logic_vector(15 downto 0);
 
     component FullAdder_16bit is
         port(
@@ -26,15 +24,16 @@ architecture behavioral of incrementor is
     end component;
 
     begin
-        with control_inc select
+        with CONTROL_OP(0) select
             I1  <=  "0000000000000100"  when "1",      -- Normal increment by 4
                     "0000000000000000"  when "0";      -- NOP
 
-        with control_prev select
-            I2  <=   PC_prev         when "0",       -- Add to previous PC
+        with CONTROL_OP(1) select
+            I2  <=   PC_init         when "0",       -- Add to previous PC
                      branch_address  when "1";       -- Add to branch destination
             
         Add : FullAdder_16bit port map (I1, I2, 0, PC);
-        fetch_mem <= I2;    -- Is returned value an address to fetch for branch location
+        PC_prev <= PC_init;
+        -- TODO: Get instruction from ROM
 
 end behavioral;
