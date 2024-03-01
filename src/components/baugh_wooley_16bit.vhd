@@ -190,8 +190,7 @@ architecture Functional of baugh_wooley_16bit is
     signal BW_sum_out : std_logic_vector(15 downto 0);
     signal BW_adder_carry : std_logic_vector(15 downto 0);
     signal A_internal, B_internal, C_high_internal, C_low_internal : std_logic_vector(15 downto 0);
-    signal i, j : integer;
-    
+   
     
     component FullAdder_1bit is
         port(
@@ -235,26 +234,24 @@ architecture Functional of baugh_wooley_16bit is
         overall : process(clk)
         begin
             
-            i := 1;
-            j := 1;
  -- LN: 239, 244, 249, 251 TODO fixing port map format
-            while i < 15 loop
-                baugh_wooley_first_lines port map (A_internal, B_internal(i), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(i));
+            G1 :  for i in 0 to 15 generate
+                first_lines     :   baugh_wooley_first_lines port map (A_internal, B_internal(i), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(i));
                 BW_carry_in <= BW_carry_out;
                 BW_sum_in <= BW_sum_out;
-                i := i + 1;
-            end loop;
+            end generate G1;
             
-            baugh_wooley_last_line port map (A_internal, B_internal(15), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(15));
+            last_line   :   baugh_wooley_last_line port map (A_internal, B_internal(15), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(15));
             carry_out(15) <= "1";
             C_low <= C_low_internal;
             DONE_low <= "1";
             
-            while j < 15 loop
+            G2 : for j in 0 to 15 generate
                 FullAdder_1bit port map (BW_sum_out(j+1), BW_carry_out(j), BW_adder_carry(j-1), C_high_internal(j), BW_adder_carry(j));
-                j := j + 1;
-            end loop;
+            end generate G2;
+            
             FullAdder_1bit port map ("1", BW_carry_out(15), BW_adder_carry(14), C_high_internal(15), BW_adder_carry(15));
+            
             C_high <= C_high_internal;
             DONE_high <= "1";
 
