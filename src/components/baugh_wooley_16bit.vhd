@@ -189,8 +189,7 @@ architecture Functional of baugh_wooley_16bit is
     signal BW_sum_in : std_logic_vector(15 downto 0);
     signal BW_sum_out : std_logic_vector(15 downto 0);
     signal BW_adder_carry : std_logic_vector(15 downto 0);
-    signal i
-    signal j
+    signal i, j;
     
     
     component FullAdder_1bit is
@@ -236,20 +235,24 @@ architecture Functional of baugh_wooley_16bit is
             j := 1;
  -- LN: 239, 244, 249, 251 TODO fixing port map format
             while i < 15 loop
-                baugh_wooley_first_lines port map (BW_A => A, BW_B(i) => B, BW_carry_in => Cin, BW_sum_in => Si, BW_carry_out => Cout, BW_sum_out, C_low(i));
+                baugh_wooley_first_lines port map (BW_A <= A, BW_B(i) <= B, BW_carry_in <= Cin, BW_sum_in <= Si, BW_carry_out <= Cout, BW_sum_out <= Sout, C_low(i) <= Sout0);
                 carry_in <= carry_out;
                 sum_in <= sum_out;
+                i := i + 1;
             end loop;
             
             baugh_wooley_last_line port map (A, BW_B(15), carry_in, sum_in, carry_out, sum_out, C_low(15));
             carry_out(15) <= "1";
             DONE_low <= "1";
             
-            while < 15 loop
+            while j < 15 loop
                 FullAdder_1bit port map (sum_out(j+1), carry_out(j), adder_carry(j-1), C_high(j), adder_carry(j));
+                j := j + 1;
             end loop;
             FullAdder_1bit port map ("1", carry_out(15), adder_carry(14), C_high(15), adder_carry(15));
             DONE_high <= "1";
 
+            end process;
+        end;
+end Functional; 
 
-end Functional;          
