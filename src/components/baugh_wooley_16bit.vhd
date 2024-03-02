@@ -82,12 +82,14 @@ entity baugh_wooley_first_lines is
         Cin     : in std_logic_vector(15 downto 0);
         Si      : in std_logic_vector(15 downto 0);
         Cout    : out std_logic_vector(15 downto 0);
-        Sout    : out std_logic_vector(15 downto 1); 
+        Sout    : out std_logic_vector(15 downto 0); 
         Sout0   : out std_logic
     );
 end baugh_wooley_first_lines;
 
 architecture Behavioral of baugh_wooley_first_lines is
+
+    signal sum_out_0 : std_logic;
 
     component and_block is
         port(
@@ -105,16 +107,28 @@ architecture Behavioral of baugh_wooley_first_lines is
 
     begin
         
-        G_AND : for and_i in 0 to 14 generate
-                    AND_gen : and_block port map (
-                        in1 => A(and_i), 
-                        in2 => B, 
-                        Ci => Cin(and_i), 
-                        AND_Si => Si(and_i), 
-                        Co => Cout(and_i), 
-                        So => Sout(and_i)
-                        );
-                 end generate G_AND;
+        AND0 : and_block port map (
+                in1 => A(0), 
+                in2 => B, 
+                Ci => Cin(0), 
+                AND_Si => Si(0), 
+                Co => Cout(0), 
+                So => sum_out_0
+                );
+         
+         sout0 <= sum_out_0;
+         sout(0) <= sum_out_0;
+        
+        G_AND : for and_i in 1 to 14 generate
+                AND_gen : and_block port map (
+                    in1 => A(and_i), 
+                    in2 => B, 
+                    Ci => Cin(and_i), 
+                    AND_Si => Si(and_i), 
+                    Co => Cout(and_i), 
+                    So => Sout(and_i)
+                    );
+         end generate G_AND;
                  
                  NAND15 : Nand_block port map (
                      in1 => A(15), 
@@ -124,7 +138,7 @@ architecture Behavioral of baugh_wooley_first_lines is
                      Co => Cout(15), 
                      So => Sout(15)
                  );
-
+          
 end Behavioral;
 
 ------------------------------------------------------------------------------------
@@ -140,12 +154,14 @@ entity baugh_wooley_last_line is
         Cin     : in std_logic_vector(15 downto 0);
         Si      : in std_logic_vector(15 downto 0);
         Cout    : out std_logic_vector(15 downto 0);
-        Sout    : out std_logic_vector(15 downto 1); 
+        Sout    : out std_logic_vector(15 downto 0); 
         Sout0   : out std_logic
     );
 end baugh_wooley_last_line;
 
 architecture Behavioral of baugh_wooley_last_line is
+
+    signal sum_out_0 : std_logic;
 
     component and_block is
         port(
@@ -162,6 +178,18 @@ architecture Behavioral of baugh_wooley_last_line is
     end component;
 
     begin
+        
+        NAND0 : nand_block port map (
+            in1 => A(0), 
+            in2 => B, 
+            Ci => Cin(0), 
+            NAND_Si => Si(0), 
+            Co => Cout(0), 
+            So => sum_out_0
+            );
+        
+         sout0 <= sum_out_0;
+         sout(0) <= sum_out_0;
         
         G_NAND : for nand_i in 0 to 14 generate
             NAND_gen : nand_block port map (
@@ -210,6 +238,8 @@ architecture Functional of baugh_wooley_16bit is
     signal BW_sum_out : std_logic_vector(15 downto 0);
     signal BW_adder_carry : std_logic_vector(15 downto 0);
     signal A_internal, B_internal, C_high_internal, C_low_internal : std_logic_vector(15 downto 0);
+    
+    signal last_adder_out : std_logic;
    
     
     component FullAdder_1bit is
@@ -226,7 +256,7 @@ architecture Functional of baugh_wooley_16bit is
             Cin     : in std_logic_vector(15 downto 0);
             Si      : in std_logic_vector(15 downto 0);
             Cout    : out std_logic_vector(15 downto 0);
-            Sout    : out std_logic_vector(15 downto 1); 
+            Sout    : out std_logic_vector(15 downto 0); 
             Sout0   : out std_logic
         );
     end component;
@@ -238,16 +268,16 @@ architecture Functional of baugh_wooley_16bit is
             Cin     : in std_logic_vector(15 downto 0);
             Si      : in std_logic_vector(15 downto 0);
             Cout    : out std_logic_vector(15 downto 0);
-            Sout    : out std_logic_vector(15 downto 1); 
+            Sout    : out std_logic_vector(15 downto 0); 
             Sout0   : out std_logic
         );
     end component;
 
     begin
 
-        BW_carry_in <= "0000000000000000";
-        BW_sum_in <= "0000000000000000";
-        BW_adder_carry <= "0000000000000001";
+        BW_carry_in <= X"0000";
+        BW_sum_in <= X"0000";
+        BW_adder_carry <= X"0001";
         A_internal <= BW_A;
         B_internal <= BW_B;
 
@@ -277,7 +307,15 @@ architecture Functional of baugh_wooley_16bit is
                 );
 
             
-             G2 : for j in 0 to 15 generate
+             adder : FullAdder_1bit port map (
+                    A => BW_sum_out(1), 
+                    B => BW_carry_out(0), 
+                    Cin => '0', 
+                    Sum => C_high_internal(0), 
+                    Cout => BW_adder_carry(0)
+                    );
+             
+             G2 : for j in 1 to 14 generate
                     adder : FullAdder_1bit port map (
                     A => BW_sum_out(j+1), 
                     B => BW_carry_out(j), 
