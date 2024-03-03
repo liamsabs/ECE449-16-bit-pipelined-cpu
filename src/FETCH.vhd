@@ -3,37 +3,71 @@ use ieee.std_logic_1164.all;
 
 entity FETCH is
     port(
-        CONTROL_OP      : in std_logic_vector(1 downto 0);
-        branch_address  : in std_logic_vector(15 downto 0);
-        PC_init         : in std_logic_vector(15 downto 0); 
-        PC              : out std_logic_vector(15 downto 0);
+        -- PC Control Signals
+        Clk             : in std_logic;
+        Reset           : in std_logic;
+        Instr_out       : out std_logic_vector(15 downto 0); -- recieved from memory then outputted to IF/ID register
+        Instr_in        : in std_logic_vector(15 downto 0); -- hardcoded Instruction in Value for Format A Test
+        FormatA_Test    : in std_logic;
+
+        -- RAM Control Signal
+        DPRAM_data_in   : in std_logic_vector(15 downto 0);
+        DPRAM_addr_b    : out std_logic_vector(15 downto 0);
+        DPRAM_en_b      : out std_logic;
+        DPRAM_read_en   : in std_logic; -- used to determine if reading from DPRAM or room (used for bootloader later)
+
+        -- ROM Control Signals
+        SPROM_data_in   : in std_logic_vector(15 downto 0);
+        SPROM_addr_b    : out std_logic_vector(15 downto 0);
+        SPROM_en_b      : out std_logic;
+
+        DONE            : out std_logic;
+
+
     );
 end FETCH;
 
 architecture behavioral of FETCH is
-    signal I1, I2 : std_logic_vector(15 downto 0);
-    signal PC_prev : std_logic_vector(15 downto 0);
+    
+    component FF is 
+    port (
+        Clk     : in std_logic;
+        Reset   : in std_logic;
+        PC_In   : in std_logic;
+        PC_Out  : out std_logic
+    );
+    end component;
 
     component FullAdder_16bit is
         port(
             A, B    : in std_logic_vector (15 downto 0);
             Cin     : in std_logic;
-            Sum     : out std_logic_vector (15 downto 0); 
             Cout    : out std_logic;
+            Sum     : out std_logic_vector (15 downto 0); 
         );
     end component;
 
-    begin
-        with CONTROL_OP(0) select
-            I1  <=  "0000000000000100"  when "1",      -- Normal increment by 4
-                    "0000000000000000"  when "0";      -- NOP
+    signal PC_Out, PC_Incr, Mem_out_data  : std_logic_vector (15 downto 0);
 
-        with CONTROL_OP(1) select
-            I2  <=   PC_init         when "0",       -- Add to previous PC
-                     branch_address  when "1";       -- Add to branch destination
-            
-        Add : FullAdder_16bit port map (I1, I2, 0, PC);
-        PC_prev <= PC_init;
-        -- TODO: Get instruction from ROM
+    begin      
+        Add : FullAdder_16bit port map (A => PC_Out, B=> "4", Cin => '0', Cout => '0', Sum => PC_Incr);
+        PC  : FF port map (Clk => Clk, D_In => PC_Incr, D_Out => PC_Out);
 
+        process (Clk, Reset)
+        begin 
+        if Reset = '1' then -- clear all signals
+            Instr_out <= (others => '0');
+            DPRAM_addr_b <= (others => '0');
+            DPRAM_en_b <= '0';
+            SPROM_addr_b <= (others => '0');
+            SPROM_en_b <= '0';       
+        elsif rising_edge (Clk) then
+            if FormatA_Test = '1' then
+                Mem_out_data <= Instr_In;
+            elsif DPRAM_read_en = '1' then
+                Mem_out_data <= DPRAM_data_in;
+            elsif SPROM_read_en = '1' then
+                Mem_out_data <= SPROM_data_in;
+            end if;
+        end if;             
 end behavioral;

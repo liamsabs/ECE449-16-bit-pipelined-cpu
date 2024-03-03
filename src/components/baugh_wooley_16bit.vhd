@@ -346,3 +346,4 @@ architecture Functional of baugh_wooley_16bit is
          end process overall;
         
 end Functional; 
+

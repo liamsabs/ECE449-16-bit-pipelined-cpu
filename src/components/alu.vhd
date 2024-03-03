@@ -12,8 +12,7 @@ entity alu is
         shiftAmt        : in std_logic_vector(3 downto 0); -- Shift amount specified in A3 
         ALU_op          : in std_logic_vector(2 downto 0); -- ALU op code from decode stage
         Result          : out std_logic_vector(15 downto 0); -- ALU Result Output
-        Z, N, Moverflow : out std_logic; -- Zero, Negative, and Multiplication overflow flags
-        DONE            : out std_logic
+        Resultupper    : out std_logic_vector(15 downto 0);
     );
 end alu;
 
@@ -76,21 +75,5 @@ architecture behavioral of alu is
                   TestOut when (ALU_op = "111");
          -- Setting Result         
         Result <= resultTemp;
-
-        -- Setting Flags
-            Z <= '1' when (resultTemp = "0000000000000000") else '0';
-            N <= '1' when (resultTemp(15) = '1') else '0';
-            process(ALU_op, multupperOut)
-            begin
-                if ALU_op = "011" then
-                    if multupperOut /= "0000000000000000" then
-                        Moverflow <= '1';
-                    else
-                        Moverflow <= '0';
-                    end if;
-                else
-                    Moverflow <= '0';
-                end if;
-                DONE <= '1';
-            end process;
+        Resultupper <= multupperout;
 end behavioral;
