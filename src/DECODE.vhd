@@ -14,26 +14,26 @@ entity DECODE is
         -- EX Signals
         ALU_op   : out std_logic_vector (2 downto 0);
         shiftAmt : out std_logic_vector (3 downto 0);
-        ALU_En   : out std_logic;
-        RA_data  : out std_logic (15 downto 0);
-        RB_data  : out std_logic (15 downto 0);
+        RA_data  : out std_logic_vector (15 downto 0);
+        RB_data  : out std_logic_vector (15 downto 0);
         -- For forwarding later on
         -- RA_addr : out std_logic (2 downto 0);
         -- RB_addr : out std_logic (2 downto 0); 
 
         -- Register File Write Signals for this instruction
-        RW_addr  : out std_logic (15 downto 0);
-        RW_En     : out std_logic (15 downto 0);
+        RW_addr  : out std_logic_vector (15 downto 0);
+        RW_En     : out std_logic_vector (15 downto 0);
 
         -- Input to Register File from WB stage
-        WB_data  : in std_logic (15 downto 0);
-        WB_addr  : in std_logic (2 downto 0);
+        WB_data  : in std_logic_vector (15 downto 0);
+        WB_addr  : in std_logic_vector (2 downto 0);
         WB_En    : in std_logic;
-
-        -- TO DO: write to memory signals
 
         -- I/0 Signals
         port_IN  : in std_logic_vector(15 downto 0);
+        port_IN_out : out std_logic_vector(15 downto 0;
+        IN_EN : out std_logic;
+   
         port_Out : out std_logic_vector (15 downto 0);
         Out_EN   : in std_logic;
 
@@ -60,13 +60,34 @@ component register_file is
     );
 end component;
 
+component IO is
+IO is 
+    port (
+        Clk         : in std_logic;
+        Reset       : in std_logic;
+        -- Input
+        Input       : in std_logic_vector(15 downto 0);
+        Input_out   : out std_logic_vector(15 downto 0);
+        Input_En    : in std_logic_vector(15 downto 0);
+        -- Output
+        Output_in   : in std_logic_vector(15 downto 0);
+        Output      : out std_logic_vector(15 downto 0);
+        Output_En   : in std_logic;
+    );
+end component;
+
 -- ALU opCode
 signal opCode : std_logic_vector (6 downto 0);
 
 -- Register File access
-signal RW_addr  : std_logic_vector (2 downto 0);
 signal W_En     :  std_logic;
 signal RW_addr, RA_addr, RB_addr  :  std_logic_vector (2 downto 0);
+
+-- I/0
+signal Input_En : std_logic;
+
+-- For test IO
+signal Input_Signal, Output_signal : std_logic_vector(15 downto 0); -- used for Format A Test
 
 begin
 
@@ -79,8 +100,12 @@ begin
         rd_data2  => RB_data,
         wr_index  => WB_addr,
         wr_data   => WB_data,
-        wr_enable => WB_enable
+        wr_enable => WB_En
         );
+              
+        RA_out <= RA_data; 
+        RB_out <= RB_data;
+        port_OUT <= RA_data;
 
     process (Clk, En, Reset)
     begin
@@ -107,19 +132,23 @@ begin
             if opCode = "00000000" then
                 RA_data <= (others => '0');
                 RB_data <= (others => '0');
-                W_En <= '0';
-
+                RW_addr_out <= (others => '0');
+                RW_En_out <= '0';
+                out_En <= '0';
             -- A2 Instruction
             elsif opCode = "0000001" or opCode = "0000010" or opCode = "0000011" or opCode = "0000100" then
                 -- ALU Signals
                 ALU_op <= instr_In (11 downto 9);
-                ALU_En <= '1';
 
                 -- Register File Signals
-                RW_Addr <= instr_In (8 downto 6);
+                RW_Addr_out <= instr_In (8 downto 6);
                 RA_Addr <= instr_In (5 downto 3);
                 RB_Addr <= instr_In (2 downto 0);
-                W_En <= '1';
+                RW_En_out <= '1';
+                
+                -- I/O
+                out_En <= '0';
+                port_IN_out <= '0';
 
             -- A3 Instruction
             elsif opCode = "0000101" or opCode = "0000110" then
@@ -131,7 +160,11 @@ begin
                 RW_Addr  <= instr_In (8 downto 6);
                 RA_Addr  <= instr_In (8 downto 6);
                 shiftAmt <= Instr_In (3 downto 0); 
-                W_En <= '1';
+                RW_En <= '1';
+                
+                -- I/O
+                out_En <= '0';
+                port_IN_out <= '0';
 
             -- A4 Instruction
             elsif opCode = "0000111" then -- Test
@@ -143,7 +176,11 @@ begin
                 RW_Addr <= (others => '0');
                 RA_Addr <= Instr_In (8 downto 6);
                 RB_Addr <= (others => '0');
-                W_En <= '0';
+                RW_En <= '0';
+                
+                -- I/O
+                out_En <= '0';
+                port_IN_out <= '0';
 
             elsif opCode = "100000" then -- OUT
                 -- ALU Signals
@@ -153,7 +190,7 @@ begin
                 RW_Addr <= (others => '0');
                 RA_Addr <= Instr_In (8 downto 6);
                 RB_Addr <= (others => '0');
-                W_En <= '0';
+                RW_En <= '0';
 
             elsif opCode = "1000001" then -- IN
                 -- ALU Signals
@@ -163,11 +200,10 @@ begin
                 RW_Addr <= Instr_In (8 downto 6);
                 RA_Addr <= (others => '0');
                 RB_Addr <= (others => '0');
-                W_En <= '1';
+                RW_En <= '1';
             end if;      
         end if;
         DONE <= '1';
     end process;
 
 end behavioral;
-     
