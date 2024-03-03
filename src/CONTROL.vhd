@@ -102,7 +102,7 @@ architecture behavioral of CONTROL is
         signal id_enable : std_logic;
         signal id_reset : std_logic;
         signal id_instr_in : std_logic_vector(15 downto 0);
-        signal id_rw_addr : std_logic_vector(15 downto 0);
+        signal id_rw_addr : std_logic_vector(2 downto 0);
         signal id_w_en : std_logic;
         signal id_ra_addr : std_logic_vector(2 downto 0);
         signal id_rb_addr : std_logic_vector(2 downto 0);
@@ -173,7 +173,7 @@ begin
             
             variable if_PC_out_var : std_logic_vector(15 downto 0);
             
-            variable id_rw_addr_var : std_logic_vector(15 downto 0);
+            variable id_rw_addr_var : std_logic_vector(2 downto 0);
             variable id_w_en_var : std_logic;
             variable id_ra_addr_var : std_logic_vector(2 downto 0);
             variable id_rb_addr_var : std_logic_vector(2 downto 0);
