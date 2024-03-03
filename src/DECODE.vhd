@@ -1,5 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
+library work;
+use work.all;
 
 entity DECODE is
     port (
@@ -57,22 +59,6 @@ component register_file is
     wr_index: in std_logic_vector(2 downto 0); 
     wr_data: in std_logic_vector(15 downto 0); 
     wr_enable: in std_logic
-    );
-end component;
-
-component IO is
-IO is 
-    port (
-        Clk         : in std_logic;
-        Reset       : in std_logic;
-        -- Input
-        Input       : in std_logic_vector(15 downto 0);
-        Input_out   : out std_logic_vector(15 downto 0);
-        Input_En    : in std_logic_vector(15 downto 0);
-        -- Output
-        Output_in   : in std_logic_vector(15 downto 0);
-        Output      : out std_logic_vector(15 downto 0);
-        Output_En   : in std_logic;
     );
 end component;
 
