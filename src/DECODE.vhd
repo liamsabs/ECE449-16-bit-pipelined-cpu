@@ -20,8 +20,9 @@ entity decoder is
 
         -- I/0 Signals
         port_IN  : in std_logic_vector(15 downto 0);
-        Out_EN   : in std_logic
+        Out_EN   : in std_logic;
         -- TBA for Instruction Set A & B
+        DONE     : out std_logic
     );
 end decoder;
 
@@ -106,6 +107,7 @@ begin
                 W_En <= '1';
             end if;      
         end if;
+        DONE <= '1';
     end process;
 
 end behavioral;
