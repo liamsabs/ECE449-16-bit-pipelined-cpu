@@ -225,9 +225,9 @@ architecture Functional of baugh_wooley_16bit is
 
     begin
 
-        carry_in <= "0000000000000000";
-        sum_in <= "0000000000000000";
-        adder_carry <= "0000000000000001";
+        BW_carry_in <= "0000000000000000";
+        BW_sum_in <= "0000000000000000";
+        BW_adder_carry <= "0000000000000001";
         A_internal <= BW_A;
         B_internal <= BW_B;
 
@@ -242,7 +242,7 @@ architecture Functional of baugh_wooley_16bit is
             end generate G1;
             
             last_line   :   baugh_wooley_last_line port map (A_internal, B_internal(15), BW_carry_in, BW_sum_in, BW_carry_out, BW_sum_out, C_low_internal(15));
-            carry_out(15) <= "1";
+            BW_carry_out(15) <= "1";
             C_low <= C_low_internal;
             DONE_low <= "1";
             
@@ -251,7 +251,7 @@ architecture Functional of baugh_wooley_16bit is
             end generate G2;
             
             FullAdder_1bit port map ("1", BW_carry_out(15), BW_adder_carry(14), C_high_internal(15), BW_adder_carry(15));
-            
+
             C_high <= C_high_internal;
             DONE_high <= "1";
 
