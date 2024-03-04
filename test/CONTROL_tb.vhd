@@ -10,54 +10,55 @@ architecture modified_behavioral of CONTROL_tb is
 
     component CONTROL is 
         port(
-            Clk, Reset: in std_logic
-            IR_In : in std_logic_vector (15 downto 0);
-            Data_in   : in std_logic (15 downto 0);
-            Data_out  : in std_logic (15 downto 0);
+            Clk, Rst       : in std_logic;
+            IR_In_from_TB  : in std_logic_vector (15 downto 0);
+            Data_In        : in std_logic_vector (15 downto 0);
+            Data_Out       : out std_logic_vector (15 downto 0)
         );
     end component; 
     
-    signal Reset_sig, Clk: std_logic; 
-    signal IR_sig, Data_in_sig Data_out_sig: std_logic_vector(15 downto 0); 
+    signal Clk_tb, Rst_tb: std_logic; 
+    signal IR_tb, Data_in_tb, Data_out_tb  : std_logic_vector(15 downto 0); 
     
 begin
-    CPU : CONTROL port map(Reset => Reset_sig, Clk => Clk, IR_in => IR_sig, Data_in => Data_in_sig, Data_out => Data_out_sig);
+    CPU : CONTROL port map(Clk => Clk_tb, Rst => Rst_tb, IR_In_from_TB => IR_tb, Data_In => Data_in_tb, Data_out => Data_out_tb); 
 
+   data_in_tb <= X"0003";
     process 
     begin
-        Clk <= '0'; wait for 10 us;
-        Clk <= '1'; wait for 10 us; 
+        Clk_tb <= '0'; wait for 10 us;
+        Clk_tb <= '1'; wait for 10 us; 
     end process;
     
     process 
     begin
-        reset_signal <= '1'; wait until (rising(Clk)); 
-        reset_signal <= '0'; wait until (rising_edge(Clk)); 
-        instruction_register <= X"4240"; wait until (rising_edge(Clk)); -- IN r1         
-        instruction_register <= X"4280"; wait until (rising_edge(Clk));  -- IN r2 
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"02D1"; wait until (rising_edge(Clk));  -- ADD r3, r2, r1   
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0AC2"; wait until (rising_edge(Clk));  -- SHL r3, 2         
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"068B"; wait until (rising_edge(Clk));  -- MUL r2, r1, r3   
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"4080"; wait until (rising_edge(Clk));  -- OUT r2       
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        instruction_register <= X"0000"; wait until (rising_edge(Clk));  -- NOP
-        reset_signal <= '1';
+        Rst_tb <= '1'; wait until (rising_edge(Clk_tb)); 
+        Rst_tb <= '0'; wait until (rising_edge(Clk_tb)); 
+        IR_tb <= X"4240"; wait until (rising_edge(Clk_tb)); -- IN r1         
+        IR_tb <= X"4280"; wait until (rising_edge(Clk_tb));  -- IN r2 
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"02D1"; wait until (rising_edge(Clk_tb));  -- ADD r3, r2, r1   
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0AC2"; wait until (rising_edge(Clk_tb));  -- SHL r3, 2         
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"068B"; wait until (rising_edge(Clk_tb));  -- MUL r2, r1, r3   
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"4080"; wait until (rising_edge(Clk_tb));  -- OUT r2       
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+        Rst_tb <= '1';
         wait;
     end process;
 
