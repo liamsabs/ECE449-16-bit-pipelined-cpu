@@ -4,6 +4,8 @@ use ieee.std_logic_1164.all;
 entity CONTROL is 
     port(
         CLOCK : in std_logic
+        Instruction : in std_logic;
+        Data_IN     : in std_logic;
     );
 end CONTROL;
 
@@ -12,20 +14,14 @@ architecture behavioral of CONTROL is
     --  FETCH COMPONENT
     ------------------------------------------------------------------------------
     component FETCH is
-        port (
-            -- Control Signal
-            CONTROL_OP     : in std_logic_vector(1 downto 0);
-
-            -- Address to branch to (future)
-            branch_address  : in std_logic_vector(15 downto 0);
-
-            -- Program Counter Signals
-            PC_init         : in std_logic_vector(15 downto 0);
-            PC_out          : out std_logic_vector(15 downto 0);
-            
-            -- DONE Signal
-            DONE            : out std_logic
-    );
+        port(
+            -- PC Control Signals
+            Clk             : in std_logic;
+            Reset           : in std_logic;
+            Instr_out       : out std_logic_vector(15 downto 0); -- recieved from memory then outputted to IF/ID register
+            Instr_in        : in std_logic_vector(15 downto 0); -- hardcoded Instruction in Value for Format A Test
+            FormatA_Test    : in std_logic
+        );
     end component;
 
     ------------------------------------------------------------------------------
@@ -55,48 +51,37 @@ architecture behavioral of CONTROL is
             DONE     : out std_logic
     );
     end component;
-
     ------------------------------------------------------------------------------
     --  EXECUTE COMPONENT
     ------------------------------------------------------------------------------
-    component alu is
-        port ( 
-            Clk             : in std_logic;
-            Input1          : in std_logic_vector(15 downto 0); -- Input from RA
-            Input2          : in std_logic_vector(15 downto 0); -- Input from RB
-            shiftAmt        : in std_logic_vector(3 downto 0); -- Shift amount specified in A3 
-            ALU_op          : in std_logic_vector(2 downto 0); -- ALU op code from decode stage
-            Result          : out std_logic_vector(15 downto 0); -- ALU Result Output
-            Z, N, Moverflow : out std_logic; -- Zero, Negative, and Multiplication overflow flags
-            DONE            : out std_logic
-        );
+    component EXECUTE is
+        port (
+             Clk        : in std_logic;
+             ALU_op     : in std_logic_vector (2 downto 0);
+             shiftAmt   : in std_logic_vector (3 downto 0);
+             RA_data    : in std_logic_vector (15 downto 0);
+             RB_data    : in std_logic_vector (15 downto 0);     
+             Result_out : out std_logic_vector (15 downto 0);
+             Z          : out std_logic;
+             N          : out std_logic;
+             Moverflow  : out std_logic;       
+             Input_IN   : in std_logic_vector (15 downto 0);
+             Input_En   : in std_logic; 
+             Done       : out std_logic
+         );
     end component;
     ------------------------------------------------------------------------------
-    --  MEMORY COMPONENT
-    ------------------------------------------------------------------------------
-
-    ------------------------------------------------------------------------------
     -- WRITE BACK COMPONENT
-    ------------------------------------------------------------------------------
-
     ------------------------------------------------------------------------------
     
     ------------------------------------------------------------------------------
     -- SIGNALS
     ------------------------------------------------------------------------------
     
-        -- IF
         
-        signal branch_address : std_logic_vector(15 downto 0);
-        signal PC_init : std_logic_vector(15 downto 0);
-        signal PC : std_logic_vector(15 downto 0);
+
+        signal IF_ID_IR : std_logic_vector (15 downto 0);
         
-        -- IF
-        signal if_ctl_op : std_logic_vector(1 downto 0);
-        signal if_branch_addr : std_logic_vector(15 downto 0);
-        signal if_pc_init : std_logic_vector(15 downto 0);
-        signal if_pc_out : std_logic_vector(15 downto 0);
-        signal if_DONE : std_logic;
         
         -- ID
         signal id_enable : std_logic;
@@ -129,7 +114,7 @@ architecture behavioral of CONTROL is
         -- MEM / WB
 begin
     
-     FetchStage : fetch port map (
+     FetchStage : FETCH port map (
            CONTROL_OP      => if_ctl_op,
            branch_address  => if_branch_addr,
            PC_init         => if_pc_init,
