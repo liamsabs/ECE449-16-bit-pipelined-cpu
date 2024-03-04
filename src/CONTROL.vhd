@@ -3,20 +3,20 @@ use ieee.std_logic_1164.all;
 
 entity CONTROL is 
     port(
-        Clk, Reset: in std_logic
-        IR_In : in std_logic_vector (15 downto 0);
-        Data_In   : in std_logic (15 downto 0);
+        Clk, Rst       : in std_logic;
+        IR_In_from_TB  : in std_logic_vector (15 downto 0);
+        Data_In        : in std_logic_vector (15 downto 0);
+        Data_Out       : out std_logic_vector (15 downto 0)
     );
 end CONTROL;
 
 architecture behavioral of CONTROL is
     component FETCH is
-        port(
-            Clk             : in std_logic;
-            Reset           : in std_logic;
-            Instr_out       : out std_logic_vector(15 downto 0); -- recieved from memory then outputted to IF/ID register
-            Instr_in        : in std_logic_vector(15 downto 0); -- hardcoded Instruction in Value for Format A Test
-            FormatA_Test    : in std_logic
+       port(
+            Clk            : in std_logic;
+            Reset          : in std_logic;
+            IR_out         : out std_logic_vector(15 downto 0); -- recieved from memory then outputted to IF/ID register
+            IR_in          : in std_logic_vector(15 downto 0) -- hardcoded Instruction in Value for Format A Test
         );
     end component;
     component DECODE is
@@ -38,158 +38,125 @@ architecture behavioral of CONTROL is
     end component;
     component EXECUTE is
         port (
-            Clk        : in std_logic;
-            ALU_op     : in std_logic_vector (2 downto 0);
-            shiftAmt   : in std_logic_vector (3 downto 0);
-            RA_data    : in std_logic_vector (15 downto 0);
-            RB_data    : in std_logic_vector (15 downto 0);     
-            Result_out : out std_logic_vector (15 downto 0);
-            Z          : out std_logic;
-            N          : out std_logic;
-            Moverflow  : out std_logic;       
-            IN_IN      : in std_logic_vector (15 downto 0);
-            IN_En      : in std_logic; 
-            Done       : out std_logic
-        );
+             Clk           : in std_logic;
+             ALU_op        : in std_logic_vector (2 downto 0);
+             shiftAmt      : in std_logic_vector (3 downto 0);
+             RA_data       : in std_logic_vector (15 downto 0);
+             RB_data       : in std_logic_vector (15 downto 0);
+             RW_addr_in    : in std_logic_vector (2 downto 0);
+             RW_En_in      : in std_logic;
+             RW_addr_out   : out std_logic_vector (2 downto 0);
+             RW_En_out     : out std_logic;     
+             RW_data_out   : out std_logic_vector (15 downto 0);
+             Z             : out std_logic;
+             N             : out std_logic;
+             Moverflow     : out std_logic;       
+             IN_IN         : in std_logic_vector (15 downto 0);
+             IN_En         : in std_logic
+         );
     end component;
    component WRITEBACK is
-    port (
-        Clk, Reset  : in std_logic;
-        W_data      : in std_logic_vector (15 downto 0);
-        W_addr      : in std_logic_vector (2 downto 0);
-        W_En        : in std_logic;
-        WB_data     : out std_logic_vector (15 downto 0);
-        WB_addr     : out std_logic_vector (2 downto 0);
-        WB_En       : out std_logic  
-    );
+        port (
+            Clk, Reset  : in std_logic;
+            W_data      : in std_logic_vector (15 downto 0);
+            W_addr      : in std_logic_vector (2 downto 0);
+            W_En        : in std_logic;
+            WB_data     : out std_logic_vector (15 downto 0);
+            WB_addr     : out std_logic_vector (2 downto 0);
+            WB_En       : out std_logic  
+        );
     end component;
     
+        -- Basic Signals
+        signal Clk_sig              : std_logic := '0';
+        signal Rst_sig              : std_logic;   
+        signal Input_sig            : std_logic_vector (15 downto 0);
+        signal Output_sig           : std_logic_vector (15 downto 0);
         
-
+        -- IF/ID
+        signal Instruction_in_sig : std_logic_vector (15 downto 0);
         signal IF_ID_IR : std_logic_vector (15 downto 0);
         
         
-        -- ID
-        signal id_enable : std_logic;
-        signal id_reset : std_logic;
-        signal id_instr_in : std_logic_vector(15 downto 0);
-        signal id_rw_addr : std_logic_vector(2 downto 0);
-        signal id_w_en : std_logic;
-        signal id_ra_addr : std_logic_vector(2 downto 0);
-        signal id_rb_addr : std_logic_vector(2 downto 0);
-        signal id_alu_op : std_logic_vector(2 downto 0);
-        signal id_shift_amt : std_logic_vector(3 downto 0);
-        signal id_alu_en : std_logic;
-        signal id_port_in : std_logic_vector(15 downto 0);
-        signal id_out_en : std_logic;
-        signal id_DONE : std_logic;
+        -- ID/EX
+        signal ID_EX_ALU_op     : std_logic_vector (2 downto 0);
+        signal ID_EX_Shiftamt   : std_logic_vector (3 downto 0);
+        signal ID_EX_RA_data    : std_logic_vector (15 downto 0);
+        signal ID_EX_RB_data    : std_logic_vector (15 downto 0);
+        signal ID_EX_RW_addr    : std_logic_vector (2 downto 0);
+        signal ID_EX_RW_En      : std_logic;
+        signal ID_EX_IN_En      : std_logic;
+        signal ID_EX_Out        : std_logic_vector (15 downto 0);
     
-        -- EX
-        signal ALU_OP : std_logic_vector(2 downto 0);
-        signal alu_input_a : std_logic_vector(15 downto 0);
-        signal alu_input_b : std_logic_vector(15 downto 0);
-        signal alu_shift_amt : std_logic_vector(3 downto 0);
-        signal alu_result : std_logic_vector(15 downto 0);
-        signal alu_Z : std_logic;
-        signal alu_N : std_logic;
-        signal alu_V : std_logic;
-        signal alu_DONE : std_logic;
+        -- EX/WB
+        signal EX_WB_RW_data    : std_logic_vector (15 downto 0);
+        signal EX_WB_RW_addr    : std_logic_vector (2 downto 0);
+        signal EX_WB_RW_En      : std_logic;
+        signal Z_flag, N_flag   : std_logic;
+        signal Moverflow_Flag   : std_logic;
         
-        -- EX / MEM  
         
-        -- MEM / WB
+        -- EX/WB
+        signal WB_ID_data       : std_logic_vector (15 downto 0);
+        signal WB_ID_addr       : std_logic_vector (2 downto 0);
+        signal WB_ID_En         : std_logic;       
 begin
+
+    Clk_sig <= Clk;
+    Rst_sig <= Rst;
+    Instruction_in_sig <= IR_In_from_TB;
     
      FetchStage : FETCH port map (
-           CONTROL_OP      => if_ctl_op,
-           branch_address  => if_branch_addr,
-           PC_init         => if_pc_init,
-           PC_out          => if_pc_out,
-           DONE            => if_DONE
+          Clk     => Clk_sig,          
+          Reset   => Rst_sig,          
+          IR_out  => IF_ID_IR,       
+          IR_in   => Instruction_in_sig          
      );
+     
+     Decoder : DECODE port map (
+          Clk       => Clk_sig, 
+          Reset     => Rst_sig,     
+          instr_In  => IF_ID_IR,       
+          ALU_op    => ID_EX_ALU_op,         
+          shiftAmt  => ID_EX_Shiftamt,       
+          RA_data   => ID_EX_RA_data,         
+          RB_data   => ID_EX_RB_data,         
+          RW_addr   => ID_EX_RW_addr,        
+          RW_En     => ID_EX_RW_En,                
+          IN_En     => ID_EX_IN_En,          
+          port_Out  => Output_sig,         
+          WB_data   => WB_ID_data,        
+          WB_addr   => WB_ID_addr,       
+          WB_En     => WB_ID_En        
+    );
     
-    ExecuteStage : alu port map (
-          Clk       => CLOCK,
-          Input1    => alu_input_a,
-          Input2    => alu_input_b,
-          shiftAmt  => alu_shift_amt,
-          ALU_op    => ALU_OP,
-          result    => alu_result,
-          Z         => alu_Z,
-          N         => alu_N,
-          Moverflow => alu_V,
-          done      => alu_DONE
+    ExecuteStage : EXECUTE port map (
+           Clk         => Clk_sig,        
+           ALU_op      => ID_EX_ALU_op,     
+           shiftAmt    => ID_EX_Shiftamt,    
+           RA_data     => ID_EX_RA_data,   
+           RB_data     => ID_EX_RB_data,
+           RW_addr_in  => ID_EX_RW_addr,
+           RW_En_in    => ID_EX_RW_En,
+           RW_addr_out => EX_WB_RW_addr,
+           RW_En_out   => EX_WB_RW_En,        
+           RW_data_out => EX_WB_RW_data, 
+           Z           => Z_flag,          
+           N           => N_flag,
+           Moverflow   => Moverflow_flag,              
+           IN_IN       => Input_sig,      
+           IN_En       => ID_EX_IN_En     
       );
       
-      Decoder : DECODE port map (
-          Clk => CLOCK,
-          En => id_enable,
-          Reset => id_reset,
-          instr_In => id_instr_in,
-          RW_addr  => id_rw_addr,
-          W_En     => id_w_en,
-          RA_addr  => id_ra_addr,
-          RB_addr  => id_rb_addr,    
-          ALU_op   => id_alu_op,
-          shiftAmt => id_shift_amt,
-          ALU_En   => id_alu_en,
-          port_IN  => id_port_in,
-          Out_EN   => id_out_en,
-          DONE     => id_DONE
-       );
-
-        Pipeline : process (CLOCK)
-        
-            variable cpu_PC : std_logic_vector(15 downto 0);
-            
-            variable if_PC_out_var : std_logic_vector(15 downto 0);
-            
-            variable id_rw_addr_var : std_logic_vector(2 downto 0);
-            variable id_w_en_var : std_logic;
-            variable id_ra_addr_var : std_logic_vector(2 downto 0);
-            variable id_rb_addr_var : std_logic_vector(2 downto 0);
-            variable id_alu_op_var : std_logic_vector(2 downto 0);
-            variable id_shift_amt_var : std_logic_vector(3 downto 0);
-            variable id_alu_en_var : std_logic;
-            
-            variable alu_result_var : std_logic_vector(15 downto 0);
-            variable alu_flags_var : std_logic_vector(2 downto 0);
-                        
-        begin
-            cpu_PC := X"0000";
-
-        
-            -- Fetch
-            if rising_edge(if_DONE) then
-                if_PC_out_var := if_PC_out;
-            end if;
-            
-            -- Decode
-            if rising_edge(id_DONE) then
-                id_rw_addr_var := id_rw_addr;
-                id_w_en_var := id_w_en;
-                id_ra_addr_var := id_ra_addr;
-                id_rb_addr_var := id_rb_addr;
-                id_alu_op_var := id_alu_op;
-                id_shift_amt_var := id_shift_amt;
-                id_alu_en_var := id_alu_en;
-            end if;
-            
-            -- Execute / ALU
-            if rising_edge(alu_DONE) then
-                alu_result_var := alu_result;
-                alu_flags_var(0) := alu_N;
-                alu_flags_var(1) := alu_Z;
-                alu_flags_var(2) := alu_V;
-                
-            end if; -- ALU_DONE
-            
-            -- Memory
-            
-            -- Write Back
-            
-        
-        end process Pipeline;
-        
+      WriteBackStage: WRITEBACK port map (
+           Clk       => Clk_sig, 
+           Reset     => Rst_sig,
+           W_data    => EX_WB_RW_data, 
+           W_addr    => EX_WB_RW_addr,         
+           W_En      => EX_WB_RW_En,            
+           WB_data   => WB_ID_data,   
+           WB_addr   => WB_ID_addr,  
+           WB_En     => WB_ID_En      
+      );       
         
 end behavioral;
