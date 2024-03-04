@@ -3,19 +3,15 @@ use ieee.std_logic_1164.all;
 
 entity CONTROL is 
     port(
-        CLOCK : in std_logic
-        Instruction : in std_logic;
-        Data_IN     : in std_logic;
+        Clk, Reset: in std_logic
+        IR_In : in std_logic_vector (15 downto 0);
+        Data_In   : in std_logic (15 downto 0);
     );
 end CONTROL;
 
 architecture behavioral of CONTROL is
-    ------------------------------------------------------------------------------
-    --  FETCH COMPONENT
-    ------------------------------------------------------------------------------
     component FETCH is
         port(
-            -- PC Control Signals
             Clk             : in std_logic;
             Reset           : in std_logic;
             Instr_out       : out std_logic_vector(15 downto 0); -- recieved from memory then outputted to IF/ID register
@@ -23,60 +19,50 @@ architecture behavioral of CONTROL is
             FormatA_Test    : in std_logic
         );
     end component;
-
-    ------------------------------------------------------------------------------
-    --  DECODE COMPONENT
-    ------------------------------------------------------------------------------
     component DECODE is
         port (
-            -- General Inputs
-            Clk, En, Reset : in std_logic;
-            instr_In : in std_logic_vector(15 downto 0);
-
-            -- Register File access
-            RW_addr  : out std_logic_vector(2 downto 0);
-            W_En     : out std_logic;
-            RA_addr  : out std_logic_vector(2 downto 0);
-            RB_addr  : out std_logic_vector(2 downto 0);    
-
-            -- ALU Signals
-            ALU_op   : out std_logic_vector(2 downto 0);
-            shiftAmt : out std_logic_vector(3 downto 0);
-            ALU_En   : out std_logic;
-
-            -- I/0 Signals
-            port_IN  : in std_logic_vector(15 downto 0);
-            Out_EN   : in std_logic;
-            -- TBA for Instruction Set A & B
-            DONE     : out std_logic
-    );
+            Clk, Reset     : in std_logic;
+            instr_In       : in std_logic_vector (15 downto 0); -- Instruction to Decode
+            ALU_op         : out std_logic_vector (2 downto 0); -- ALU operands
+            shiftAmt       : out std_logic_vector (3 downto 0);
+            RA_data        : out std_logic_vector (15 downto 0);
+            RB_data        : out std_logic_vector (15 downto 0);
+            RW_addr        : out std_logic_vector (2 downto 0); -- Write operands to forward through pipeline
+            RW_En          : out std_logic;
+            IN_En          : out std_logic; 
+            port_Out       : out std_logic_vector (15 downto 0);
+            WB_data        : in std_logic_vector (15 downto 0); -- Write Back Inputs
+            WB_addr        : in std_logic_vector (2 downto 0);
+            WB_En          : in std_logic
+        );
     end component;
-    ------------------------------------------------------------------------------
-    --  EXECUTE COMPONENT
-    ------------------------------------------------------------------------------
     component EXECUTE is
         port (
-             Clk        : in std_logic;
-             ALU_op     : in std_logic_vector (2 downto 0);
-             shiftAmt   : in std_logic_vector (3 downto 0);
-             RA_data    : in std_logic_vector (15 downto 0);
-             RB_data    : in std_logic_vector (15 downto 0);     
-             Result_out : out std_logic_vector (15 downto 0);
-             Z          : out std_logic;
-             N          : out std_logic;
-             Moverflow  : out std_logic;       
-             Input_IN   : in std_logic_vector (15 downto 0);
-             Input_En   : in std_logic; 
-             Done       : out std_logic
-         );
+            Clk        : in std_logic;
+            ALU_op     : in std_logic_vector (2 downto 0);
+            shiftAmt   : in std_logic_vector (3 downto 0);
+            RA_data    : in std_logic_vector (15 downto 0);
+            RB_data    : in std_logic_vector (15 downto 0);     
+            Result_out : out std_logic_vector (15 downto 0);
+            Z          : out std_logic;
+            N          : out std_logic;
+            Moverflow  : out std_logic;       
+            IN_IN      : in std_logic_vector (15 downto 0);
+            IN_En      : in std_logic; 
+            Done       : out std_logic
+        );
     end component;
-    ------------------------------------------------------------------------------
-    -- WRITE BACK COMPONENT
-    ------------------------------------------------------------------------------
-    
-    ------------------------------------------------------------------------------
-    -- SIGNALS
-    ------------------------------------------------------------------------------
+   component WRITEBACK is
+    port (
+        Clk, Reset  : in std_logic;
+        W_data      : in std_logic_vector (15 downto 0);
+        W_addr      : in std_logic_vector (2 downto 0);
+        W_En        : in std_logic;
+        WB_data     : out std_logic_vector (15 downto 0);
+        WB_addr     : out std_logic_vector (2 downto 0);
+        WB_En       : out std_logic  
+    );
+    end component;
     
         
 
@@ -122,7 +108,7 @@ begin
            DONE            => if_DONE
      );
     
-    ArithmeticLogicUnit : alu port map (
+    ExecuteStage : alu port map (
           Clk       => CLOCK,
           Input1    => alu_input_a,
           Input2    => alu_input_b,
