@@ -59,8 +59,9 @@ begin
         );
         
         -- Signal Decleration
-        RA_data <= RA_data_sig; Out_sig <= RA_data_sig;
+        RA_data <= RA_data_sig; 
         RB_data <= RB_data_sig;
+        Out_sig <= RA_data_sig;
 
         opCode <= instr_In (15 downto 9);
 
@@ -76,6 +77,7 @@ begin
             IN_En          <= '0';
             port_Out       <= (others => '0');
         elsif rising_edge(Clk) then
+        
             -- A1 Instruction (NOOP)
             if opCode = "00000000" then
                 ALU_op         <= (others => '0');
