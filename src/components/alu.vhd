@@ -6,13 +6,12 @@ use work.all;
 
 entity alu is
     port ( 
-        Clk             : in std_logic;
         Input1          : in std_logic_vector(15 downto 0); -- Input from RA
         Input2          : in std_logic_vector(15 downto 0); -- Input from RB
         shiftAmt        : in std_logic_vector(3 downto 0); -- Shift amount specified in A3 
         ALU_op          : in std_logic_vector(2 downto 0); -- ALU op code from decode stage
         Result          : out std_logic_vector(15 downto 0); -- ALU Result Output
-        Resultupper    : out std_logic_vector(15 downto 0);
+        Resultupper    : out std_logic_vector(15 downto 0)
     );
 end alu;
 
@@ -31,15 +30,10 @@ architecture behavioral of alu is
         );
     end component; 
 
-    component baugh_wooley_16bit is
-        port(
-            clk         : in std_logic;
-            BW_A           : in std_logic_vector(15 downto 0);
-            BW_B           : in std_logic_vector(15 downto 0);
-            C_high      : out std_logic_vector(15 downto 0);
-            C_low       : out std_logic_vector(15 downto 0);
-            DONE_high   : out std_logic;
-            DONE_low    : out std_logic
+    component multiplier_16bit is
+        port (
+            A, B : in  std_logic_vector(15 downto 0);
+            Result_High, Result_Low : out std_logic_vector(15 downto 0)
         );
     end component;
 
@@ -62,7 +56,7 @@ architecture behavioral of alu is
         -- Instantiating Different Blocks of ALU
         adderSubtractor : adderSubtractor_16bit port map ( A => Input1, B => Input2, Sub => ALU_op(1), Sum => addsubOut );
         nand16 : nand_16bit port map ( A => Input1, B => Input2, C => nandOut );
-        bwmultiplier : baugh_wooley_16bit port map (Clk => Clk, BW_A => Input1, BW_B => Input2, C_high => multupperOut, C_low => multlowerOut);
+        multiplier : multiplier_16bit port map (A => Input1, B => Input2, Result_high => multupperOut, Result_low => multlowerOut);
         barrelshift : barrelshift_16bit port map (direction => bsdir , shiftamount => shiftAmt, A => Input1, ShiftedResult => barrelshiftOut );
         bsdir <= (not ALU_op(1)) and ALU_op(0); -- evaluates to 1 for shift left opcode and 0 for right shift
         TestOut <= Input1; -- set TestOut to RA

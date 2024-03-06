@@ -1,16 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity CONTROL is 
-    port(
-        Clk, Rst       : in std_logic;
-        IR_In_from_TB  : in std_logic_vector (15 downto 0);
-        Data_In        : in std_logic_vector (15 downto 0);
-        Data_Out       : out std_logic_vector (15 downto 0)
-    );
-end CONTROL;
+entity CONTROL_tb is end CONTROL_tb;
 
-architecture behavioral of CONTROL is
+architecture testbench of CONTROL_tb is
     component FETCH is
        port(
             Clk            : in std_logic;
@@ -66,13 +59,7 @@ architecture behavioral of CONTROL is
             WB_En       : out std_logic  
         );
     end component;
-    
-        -- Basic Signals
-        signal Clk_sig              : std_logic := '0';
-        signal Rst_sig              : std_logic;   
-        signal Input_sig            : std_logic_vector (15 downto 0);
-        signal Output_sig           : std_logic_vector (15 downto 0);
-        
+          
         -- IF/ID
         signal Instruction_in_sig : std_logic_vector (15 downto 0);
         signal IF_ID_IR : std_logic_vector (15 downto 0);
@@ -99,23 +86,26 @@ architecture behavioral of CONTROL is
         -- EX/WB
         signal WB_ID_data       : std_logic_vector (15 downto 0);
         signal WB_ID_addr       : std_logic_vector (2 downto 0);
-        signal WB_ID_En         : std_logic;       
+        signal WB_ID_En         : std_logic; 
+        
+        
+        -- simulation signals 
+        signal Clk_tb              : std_logic := '0';
+        signal Rst_tb              : std_logic;
+        signal IR_tb, Data_in_tb, Data_out_tb  : std_logic_vector(15 downto 0);      
 begin
 
-    Clk_sig <= Clk;
-    Rst_sig <= Rst;
-    Instruction_in_sig <= IR_In_from_TB;
     
      FetchStage : FETCH port map (
-          Clk     => Clk_sig,          
-          Reset   => Rst_sig,          
+          Clk     => Clk_tb,          
+          Reset   => Rst_tb,          
           IR_out  => IF_ID_IR,       
-          IR_in   => Instruction_in_sig          
+          IR_in   => IR_tb          
      );
      
      Decoder : DECODE port map (
-          Clk       => Clk_sig, 
-          Reset     => Rst_sig,     
+          Clk       => Clk_tb, 
+          Reset     => Rst_tb,     
           instr_In  => IF_ID_IR,       
           ALU_op    => ID_EX_ALU_op,         
           shiftAmt  => ID_EX_Shiftamt,       
@@ -124,14 +114,14 @@ begin
           RW_addr   => ID_EX_RW_addr,        
           RW_En     => ID_EX_RW_En,                
           IN_En     => ID_EX_IN_En,          
-          port_Out  => Output_sig,         
+          port_Out  => Data_out_tb,         
           WB_data   => WB_ID_data,        
           WB_addr   => WB_ID_addr,       
           WB_En     => WB_ID_En        
     );
     
     ExecuteStage : EXECUTE port map (
-           Clk         => Clk_sig,        
+           Clk         => Clk_tb,        
            ALU_op      => ID_EX_ALU_op,     
            shiftAmt    => ID_EX_Shiftamt,    
            RA_data     => ID_EX_RA_data,   
@@ -144,19 +134,58 @@ begin
            Z           => Z_flag,          
            N           => N_flag,
            Moverflow   => Moverflow_flag,              
-           IN_IN       => Input_sig,      
+           IN_IN       => Data_in_tb,      
            IN_En       => ID_EX_IN_En     
       );
       
       WriteBackStage: WRITEBACK port map (
-           Clk       => Clk_sig, 
-           Reset     => Rst_sig,
+           Clk       => Clk_tb, 
+           Reset     => Rst_tb,
            W_data    => EX_WB_RW_data, 
            W_addr    => EX_WB_RW_addr,         
            W_En      => EX_WB_RW_En,            
            WB_data   => WB_ID_data,   
            WB_addr   => WB_ID_addr,  
            WB_En     => WB_ID_En      
-      );       
+      );
+      
+      data_in_tb <= X"0003";
+          process 
+          begin
+              Clk_tb <= '0'; wait for 50 us;
+              Clk_tb <= '1'; wait for 50 us; 
+          end process;
+          
+          process 
+          begin
+              Rst_tb <= '1'; wait until (rising_edge(Clk_tb)); 
+              Rst_tb <= '0'; wait until (rising_edge(Clk_tb)); 
+              IR_tb <= X"4240"; wait until (rising_edge(Clk_tb));  -- IN r1         
+              IR_tb <= X"4280"; wait until (rising_edge(Clk_tb));  -- IN r2 
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"02D1"; wait until (rising_edge(Clk_tb));  -- ADD r3, r2, r1   
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0AC2"; wait until (rising_edge(Clk_tb));  -- SHL r3, 2         
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"068B"; wait until (rising_edge(Clk_tb));  -- MUL r2, r1, r3   
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"4080"; wait until (rising_edge(Clk_tb));  -- OUT r2       
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              IR_tb <= X"0000"; wait until (rising_edge(Clk_tb));  -- NOP
+              Rst_tb <= '1';
+              wait;
+          end process;        
         
-end behavioral;
+end testbench;
