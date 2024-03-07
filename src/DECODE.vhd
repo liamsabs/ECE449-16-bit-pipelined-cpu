@@ -71,7 +71,7 @@ begin
         );
    
    -- Decode Output Signal Assignment
-    OPCODE <= IR_in(15 downto 9);    
+    opCode <= IR_in(15 downto 9);    
     ALU_op <= ALU_op_sig;
     shiftAmt <= shiftAmt_sig;
     RA_data <= RA_data_sig;       
@@ -85,49 +85,7 @@ begin
     WB_data_sig <= WB_data;
     WB_En_sig   <= WB_En;
     
-    
-    with opCode select
-        ALU_op_sig <= 
-            IR_in(11 downto 9) when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0000111",
-            (others => '0') when others;
-    
-    with opCode select
-        shiftAmt_sig <= 
-            IR_in(3 downto 0) when "0000101" | "0000110",
-            (others => '0') when others;
-    
-    with opCode select
-        RA_Addr_sig <= 
-            IR_in(5 downto 3) when "0000001" | "0000010" | "0000011" | "0000100",
-            IR_in(8 downto 6) when "0000101" |"0000110" |"0000111" |"100000" |"1000001",
-            (others => '0') when others; 
-    
-    with opCode select
-        RB_Addr_sig <= 
-            IR_in(2 downto 0) when "0000001" |"0000010" |"0000011" |"0000100",
-            (others => '0') when others; 
-    
-    with opCode select
-        RW_Addr_sig <=
-            IR_in(8 downto 6) when "0000001" |"0000010" |"0000011" |"0000100" |"0000101" |"0000110" |"0100001",
-            (others => '0') when others;
-    
-    with opCode select
-        RW_En_sig <= 
-            '1' when "0000001" |"0000010" |"0000011" |"0000100" |"0000101" |"0000110" |"0100001",
-            '0' when others;
-    
-    with opCode select
-        IN_En_sig <= 
-            '1' when "0100001",
-            '0' when others;
-    
-    with opCode select
-        port_Out_sig <= 
-            RA_Data_sig when "0100000",
-            (others => '0') when others;
-              
-    process ( Reset)
+    decode_process : process (Reset, opCode)
     begin
         if Reset = '1' then
             ALU_op_sig     <= (others => '0');
@@ -138,6 +96,49 @@ begin
             RW_En_sig      <= '0';
             IN_En_sig      <= '0';
             port_Out_sig   <= (others => '0');
-         end if; 
-   end process;
+        
+        else
+
+            with opCode select
+                ALU_op_sig <= 
+                    IR_in(11 downto 9) when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0000111",
+                    (others => '0') when others;
+            
+            with opCode select
+                shiftAmt_sig <= 
+                    IR_in(3 downto 0) when "0000101" | "0000110",
+                    (others => '0') when others;
+            
+            with opCode select
+                RA_Addr_sig <= 
+                    IR_in(5 downto 3) when "0000001" | "0000010" | "0000011" | "0000100",
+                    IR_in(8 downto 6) when "0000101" |"0000110" |"0000111" |"100000" |"1000001",
+                    (others => '0') when others; 
+            
+            with opCode select
+                RB_Addr_sig <= 
+                    IR_in(2 downto 0) when "0000001" |"0000010" |"0000011" |"0000100",
+                    (others => '0') when others; 
+            
+            with opCode select
+                RW_Addr_sig <=
+                    IR_in(8 downto 6) when "0000001" |"0000010" |"0000011" |"0000100" |"0000101" |"0000110" |"0100001",
+                    (others => '0') when others;
+            
+            with opCode select
+                RW_En_sig <= 
+                    '1' when "0000001" |"0000010" |"0000011" |"0000100" |"0000101" |"0000110" |"0100001",
+                    '0' when others;
+            
+            with opCode select
+                IN_En_sig <= 
+                    '1' when "0100001",
+                    '0' when others;
+            
+            with opCode select
+                port_Out_sig <= 
+                    RA_Data_sig when "0100000",
+                    (others => '0') when others;
+        end if;
+    end process decode_process;
 end behavioral;
