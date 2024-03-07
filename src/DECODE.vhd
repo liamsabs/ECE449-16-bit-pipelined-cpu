@@ -79,7 +79,8 @@ begin
     RA_data <= RA_data_sig;       
     RB_data <= RB_data_sig;
     RW_addr <= RW_addr_sig;
-    RW_En <= RW_En_sig;          
+    RW_En <= RW_En_sig;
+    IN_en <= IN_En_sig;          
     port_Out <= port_Out_sig;
     
     -- Write Back Signal Assignment
@@ -87,7 +88,7 @@ begin
     WB_data_sig <= WB_data;
     WB_En_sig   <= WB_En;
     
-    decode_process : process (Reset, opCode, IR_sig)
+    decode_process : process (Reset, opCode, IR_sig, RA_data_sig)
     begin
         if Reset = '1' then
             ALU_op_sig     <= (others => '0');
@@ -117,7 +118,7 @@ begin
                     RW_addr_sig    <= IR_sig (8 downto 6);
                     RW_En_sig      <= '1';
                     IN_En_sig      <= '0';                     
-                when "00000101" | "0000110" => -- SHL, SHR
+                when "0000101" | "0000110" => -- SHL, SHR
                     ALU_op_sig     <= IR_sig (11 downto 9);
                     shiftAmt_sig   <= IR_sig (3 downto 0);
                     RA_addr_sig    <= IR_sig (8 downto 6);
