@@ -18,7 +18,7 @@ begin
         if disps_sig(5) = '1' then
             dispsformatted_sig <= "111111111" & disps_sig & '0';
         else
-            disp1formatted_sig <= "000000000" & disps_sig & '0';
+            dispsformatted_sig <= "000000000" & disps_sig & '0';
         end if;
     end process;
     dispsformatted <= dispsformatted_sig;
