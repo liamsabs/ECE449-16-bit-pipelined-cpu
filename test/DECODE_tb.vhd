@@ -20,22 +20,33 @@ architecture tb_arch of DECODE_tb is
     signal IN_En        : std_logic;
     signal port_Out     : std_logic_vector(15 downto 0);
 
-    component DECODE
+    component DECODE is
         port (
-            Clk            : in std_logic;
-            Reset          : in std_logic;
-            IR_in          : in std_logic_vector(15 downto 0);
-            WB_data        : in std_logic_vector(15 downto 0);
-            WB_addr        : in std_logic_vector(2 downto 0);
-            WB_En          : in std_logic;
-            ALU_op         : out std_logic_vector(2 downto 0);
-            shiftAmt       : out std_logic_vector(3 downto 0);
-            RA_data        : out std_logic_vector(15 downto 0);
-            RB_data        : out std_logic_vector(15 downto 0);
-            RW_addr        : out std_logic_vector(2 downto 0);
-            RW_En          : out std_logic;
-            IN_En          : out std_logic;
-            port_Out       : out std_logic_vector(15 downto 0)
+            Clk            : in std_logic; -- Clock Input
+            Reset          : in std_logic; -- Reset
+            IR_in          : in std_logic_vector (15 downto 0); -- Instruction to Decode
+            -- WriteBack
+            WB_data        : in std_logic_vector (15 downto 0); -- Write Back data
+            WB_addr        : in std_logic_vector (2 downto 0); -- Write Back address 
+            WB_En          : in std_logic; -- Write Back Enable
+            -- Execute and Register Write Operands
+            ALU_op         : out std_logic_vector (2 downto 0); -- ALU operands
+            shiftAmt       : out std_logic_vector (3 downto 0); -- shift amount
+            RA_data        : out std_logic_vector (15 downto 0); -- Register A data
+            RB_data        : out std_logic_vector (15 downto 0); -- Register B data
+            RW_addr        : out std_logic_vector (2 downto 0); -- Register Write Address
+            RW_En          : out std_logic; -- Register Write Enable
+            -- Branching
+            PC             : in std_logic_vector (15 downto 0); -- recieved PC+2 (needs to be decremented for branching)
+            B_addr         : out std_logic_vector (15 downto 0); -- branch address to give to FETCH
+            B_En           : out std_logic; -- branch enable given to fetch     
+            Z_flag, N_flag : out std_logic; -- zero and negative flags, outputted for debugging
+            -- For BR.SUB
+            BR_sub_En      : out std_logic; -- BR sub EN, this means we pass PC+2 to be written to R7
+            BR_sub_PC      : out std_logic_vector (15 downto 0); -- PC+2 which is written to R7 
+            -- I/0 Handling
+            IN_En          : out std_logic; -- enables input to be read in execute stage 
+            port_Out       : out std_logic_vector (15 downto 0) -- output from OUT instruction
         );
     end component;
 
