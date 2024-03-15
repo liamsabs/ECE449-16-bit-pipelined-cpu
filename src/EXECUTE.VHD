@@ -23,7 +23,8 @@ entity EXECUTE is
          IN_En          : in std_logic;
          BR_CTRL        : out std_logic;
          BR_addr_in     : in std_logic_vector(15 downto 0);
-         BR_addr_out    : out std_logic_vector(15 downto 0)
+         BR_addr_out    : out std_logic_vector(15 downto 0);
+         BR_sub_PC      : in std_logic_vector(15 downto 0);
 
      );
 end EXECUTE;
@@ -71,22 +72,27 @@ architecture Behavioral of EXECUTE is
         -- Setting Flags
         process(Clk, Resulttemp, ALU_op)
         begin
-                if rising_edge (Clk) then
-                RW_data_out <= Resulttemp; -- propogate results
+            if rising_edge (Clk) then
                 RW_addr_out <= RW_addr_sig; -- propogate Write address
                 RW_En_out   <= RW_En_sig; -- propogate write enable 
 
                 -- Zero signal
                 if resulttemp = X"0000" then 
-                    Z_sig <= "1"
-                else Z_sig <= "0"
+                    Z_sig <= "1";
+                else Z_sig <= "0";
                 end if;
 
                 -- Negative signal
                 if resulttemp(15) = "1" then 
-                    N_sig <= "1"
-                else N_sig <= "0"
+                    N_sig <= "1";
+                else N_sig <= "0";
                 end if;
+
+                -- Overflow signal
+                case Moverflow_Sig is
+                    when "0" => Moverflow <= "0";
+                    when "1" => Moverflow <= "1";
+                end case;
 
                 case BR_EN is
                     when "0" =>
@@ -109,14 +115,14 @@ architecture Behavioral of EXECUTE is
 
                             when "01" =>    -- branch if zero
                                 if Z_sig = "1" then 
-                                    BR_CTRL <= "1"
-                                else BR_CTRL <= "0"
+                                    BR_CTRL <= "1";
+                                else BR_CTRL <= "0";
                                 end if;
 
                             when "10" =>    -- branch if negative
                                 if N_sig = "1" then 
-                                    BR_CTRL <= "1"
-                                else BR_CTRL <= "0"
+                                    BR_CTRL <= "1";
+                                else BR_CTRL <= "0";
                                 end if;
 
                             when "11" =>    -- branch sub
@@ -126,13 +132,15 @@ architecture Behavioral of EXECUTE is
 
                 end case;
 
-                -- ADD output CASE statement
-
-                case Moverflow_Sig is
-                    when "0" => Moverflow <= "0";
-                    when "1" => Moverflow <= "1";
-                end case;
-
+                -- output case statement
+                if BR_OP = "11" then
+                    RW_data_out <= branch_sub_PC;
+                elsif IN_EN = "1" then
+                    RW_data_out <= IN_in;
+                else 
+                    RW_data_out <= resulttemp;
                 end if;
-            end process;
+
+            end if;
+        end process;
 end Behavioral;
