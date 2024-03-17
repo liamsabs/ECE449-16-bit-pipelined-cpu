@@ -1,6 +1,8 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+-- finish branch_sub logic
+
 entity EXECUTE is
     port (
          Clk            : in std_logic;
@@ -70,77 +72,74 @@ architecture Behavioral of EXECUTE is
         Resulttemp <= IN_result when IN_En = '1' else ALU_Result; 
         
         -- Setting Flags
-        process(Clk, Resulttemp, ALU_op)
+        process(Resulttemp, ALU_op)
         begin
-            if rising_edge (Clk) then
-                RW_addr_out <= RW_addr_sig; -- propogate Write address
-                RW_En_out   <= RW_En_sig; -- propogate write enable 
+            RW_addr_out <= RW_addr_sig; -- propogate Write address
+            RW_En_out   <= RW_En_sig; -- propogate write enable 
 
-                -- Zero signal
-                if resulttemp = X"0000" then 
-                    Z_sig <= "1";
-                else Z_sig <= "0";
-                end if;
+            -- Zero signal
+            if resulttemp = X"0000" then 
+                Z_sig <= "1";
+            else Z_sig <= "0";
+            end if;
 
-                -- Negative signal
-                if resulttemp(15) = "1" then 
-                    N_sig <= "1";
-                else N_sig <= "0";
-                end if;
+            -- Negative signal
+            if resulttemp(15) = "1" then 
+                N_sig <= "1";
+            else N_sig <= "0";
+            end if;
 
-                -- Overflow signal
-                case Moverflow_Sig is
-                    when "0" => Moverflow <= "0";
-                    when "1" => Moverflow <= "1";
-                end case;
+            -- Overflow signal
+            case Moverflow_Sig is
+                when "0" => Moverflow <= "0";
+                when "1" => Moverflow <= "1";
+            end case;
 
-                case BR_EN is
-                    when "0" =>
-                        case ALU_OP is
-                            when "100" =>   -- set flags (TEST)
-                                Z_flag <= Z_sig;
-                                N_flag <= N_sig;
-                            
-                            when "011" =>   -- multiply
-                                if alu_upper /= X"0000" then
-                                    Moverflow_sig <= "1";
-                                end if;
+            case BR_EN is
+                when "0" =>
+                    case ALU_OP is
+                        when "100" =>   -- set flags (TEST)
+                            Z_flag <= Z_sig;
+                            N_flag <= N_sig;
+                        
+                        when "011" =>   -- multiply
+                            if alu_upper /= X"0000" then
+                                Moverflow_sig <= "1";
+                            end if;
 
-                        end case;
+                    end case;
 
-                    when "1" => 
-                        case BR_OP is
-                            when "00" =>    -- branch unconditionally
+                when "1" => 
+                    case BR_OP is
+                        when "00" =>    -- branch unconditionally
+                            BR_CTRL <= "1";
+
+                        when "01" =>    -- branch if zero
+                            if Z_sig = "1" then 
                                 BR_CTRL <= "1";
+                            else BR_CTRL <= "0";
+                            end if;
 
-                            when "01" =>    -- branch if zero
-                                if Z_sig = "1" then 
-                                    BR_CTRL <= "1";
-                                else BR_CTRL <= "0";
-                                end if;
+                        when "10" =>    -- branch if negative
+                            if N_sig = "1" then 
+                                BR_CTRL <= "1";
+                            else BR_CTRL <= "0";
+                            end if;
 
-                            when "10" =>    -- branch if negative
-                                if N_sig = "1" then 
-                                    BR_CTRL <= "1";
-                                else BR_CTRL <= "0";
-                                end if;
+                        when "11" =>    -- branch sub
+                            BR_CTRL <= "1";
 
-                            when "11" =>    -- branch sub
-                                BR_CTRL <= "1"; --EDIT
+                    end case;
 
-                        end case;
+            end case;
 
-                end case;
-
-                -- output case statement
-                if BR_OP = "11" then
-                    RW_data_out <= branch_sub_PC;
-                elsif IN_EN = "1" then
-                    RW_data_out <= IN_in;
-                else 
-                    RW_data_out <= resulttemp;
-                end if;
-
+            -- output case statement
+            if BR_OP = "11" then
+                RW_data_out <= branch_sub_PC;
+            elsif IN_EN = "1" then
+                RW_data_out <= IN_in;
+            else 
+                RW_data_out <= resulttemp;
             end if;
         end process;
 end Behavioral;
