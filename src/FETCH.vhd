@@ -3,7 +3,6 @@ use ieee.std_logic_1164.all;
 
 entity FETCH is
     port(
-        Clk             : in std_logic;
         Reset           : in std_logic;
         PC_reset        : in std_logic;                         -- Resets PC to [val?]
         Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
