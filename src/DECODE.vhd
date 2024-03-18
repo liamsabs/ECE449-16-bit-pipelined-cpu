@@ -18,22 +18,24 @@ entity DECODE is
         RW_addr        : out std_logic_vector (2 downto 0); -- Register Write Address
         RW_En          : out std_logic; -- Register Write Enable
         -- Test
-        Test_En        : out std_logic; -- Signal for 
+        Test_En        : out std_logic; -- Signal to enable Test in execute stage (overrides ALU when passing into Mem/WB) 
         -- Branching
         PC             : in std_logic_vector (15 downto 0); -- recieved PC+2 (needs to be decremented for branching)
         B_addr         : out std_logic_vector (15 downto 0); -- branch address to give to FETCH
-        B_En           : out std_logic;
-        B_Op           : out std_logic_vector (1 downto 0); -- branch condition
+        B_En           : out std_logic; -- Indicates that the instruction is a branch (still need to check if we can branch in EX based on B_Op)
+        B_op           : out std_logic_vector (1 downto 0); -- branch condition
         -- For BR.SUB
-        BR_sub_PC      : out std_logic_vector (15 downto 0); -- PC+2 which is written to R7 
+        BR_sub_PC      : out std_logic_vector (15 downto 0); -- PC+2 which is written to R7 during BR_sub 
         -- I/0 Handling
         IN_En          : out std_logic; -- enables input to be read in execute stage 
         port_Out       : out std_logic_vector (15 downto 0); -- output from OUT instruction
         -- Forwarding
-        FW_A_data      : in std_logic_vector (15 downto 0);
-        FW_A_En        : in std_logic;
-        FW_B_data      : in std_logic_vector (15 downto 0);
-        FW_B_En        : in std_logic
+        RA_addr        : out std_logic_vector (2 downto 0); -- address of RA used for forwarding
+        FW_A_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RA
+        FW_A_En        : in std_logic; -- input to be used to determine if forwarding RA
+        RB_addr        : out std_logic_vector (2 downto 0); -- address of RB used for forwarding
+        FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RA
+        FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
     );
 end DECODE;
 
@@ -64,7 +66,7 @@ component FullAdder_16bit is
     );
 end component;
 
-component B1dispformatter is 
+component B1dispformatter is
     port (
          disp1 : in std_logic_vector(8 downto 0);
          disp1formatted : out std_logic_vector(15 downto 0)
@@ -79,20 +81,22 @@ component B2dispformatter is
 end component;
 
 -- register file signals
-signal opcode             :  std_logic_vector (6 downto 0);
-signal RA_data_sig        :  std_logic_vector (15 downto 0);
-signal RA_addr_sig        :  std_logic_vector (2 downto 0);
-signal RB_data_sig        :  std_logic_vector (15 downto 0);
-signal RB_addr_sig        :  std_logic_vector (2 downto 0);
+signal opcode             :  std_logic_vector (6 downto 0); -- opcode used for case statement in decode
+signal RA_data_sig        :  std_logic_vector (15 downto 0); -- RA data from register file
+signal RA_data_sig_FW     :  std_logic_vector (15 downto 0); -- RA data with forwarding logic applied
+signal RA_addr_sig        :  std_logic_vector (2 downto 0); -- RA address inputted to register file and outputted for forwarding
+signal RB_data_sig        :  std_logic_vector (15 downto 0); -- RB data from register file
+signal RB_data_sig_FW     :  std_logic_vector (15 downto 0); -- RB data with forwarding logic applied
+signal RB_addr_sig        :  std_logic_vector (2 downto 0); -- RB address inputted to register file and outputted for forwarding
 -- Branching Signals
-signal PC_dec_sig         : std_logic_vector (15 downto 0);
-signal disp1_sig          : std_logic_vector (8 downto 0);
-signal disp1formatted_sig : std_logic_vector (15 downto 0);
-signal disps_sig          : std_logic_vector (5 downto 0);
-signal dispsformatted_sig : std_logic_vector (15 downto 0);
-signal B_operand1         : std_logic_vector (15 downto 0);
-signal B_operand2         : std_logic_vector (15 downto 0);
-signal B_adder_sig        : std_logic_vector (15 downto 0);
+signal PC_dec_sig         : std_logic_vector (15 downto 0); -- signal representing PC where 2 been subtracted
+signal disp1_sig          : std_logic_vector (8 downto 0); -- bits from IR for disp1 to be formatted
+signal disp1formatted_sig : std_logic_vector (15 downto 0); -- disp1 post formatting (sign extended to 16 bits)
+signal disps_sig          : std_logic_vector (5 downto 0); -- bits from IR for disps to be formatted
+signal dispsformatted_sig : std_logic_vector (15 downto 0); -- disps post formatting (sign extended to 16 bits)
+signal B_operand1         : std_logic_vector (15 downto 0); -- operand 1 for branch address calculation
+signal B_operand2         : std_logic_vector (15 downto 0); -- operand 2 for branch address calculation
+signal B_adder_sig        : std_logic_vector (15 downto 0); -- signal from the adder used for branch computation
 
 begin
 
@@ -128,17 +132,20 @@ begin
         Sum => B_adder_sig
     );
     
-   -- Decode Output Signal Assignment
-    opCode <= IR_in(15 downto 9);    
-    RA_data <= RA_data_sig;       
-    RB_data <= RB_data_sig;         
+    -- Decode Output Signal Assignment
+    opCode <= IR_in(15 downto 9);
+    -- Register Data and Forwarding Signals
+    RA_data <= RA_data_sig_FW;
+    RB_data <= RB_data_sig_FW; 
+    RA_addr <= RA_addr_sig;
+    RB_addr <= RB_addr_sig;           
     -- Branching signal Assignment
     BR_sub_PC <= PC; 
     -- Branch Formatting
     disp1_sig <= IR_in (8 downto 0);
     disps_sig <= IR_in (5 downto 0);
     
-    decode_process : process (Reset, opCode, IR_in, RA_data_sig, PC_dec_sig, disp1formatted_sig, B_adder_sig, dispsformatted_sig, B_operand1, B_operand2)
+    decode_process : process (Reset, opCode, IR_in, RA_data_sig_FW, PC_dec_sig, disp1formatted_sig, B_adder_sig, dispsformatted_sig, B_operand1, B_operand2)
     begin
         if Reset = '1' then
             ALU_op         <= (others => '0');
@@ -227,7 +234,7 @@ begin
                     B_operand1     <= (others => '0');
                     B_operand2     <= (others => '0');
                     B_addr         <= (others => '0');                  
-                    port_Out       <= RA_data_sig;
+                    port_Out       <= RA_data_sig_FW;
                 when "0100001" => --In
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');   
@@ -295,7 +302,7 @@ begin
                     Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "00";
-                    B_operand1     <= RA_data_sig;
+                    B_operand1     <= RA_data_sig_FW;
                     B_operand2     <= dispsformatted_sig;
                     B_addr         <= B_adder_sig;
                 when "1000100" => -- BR.N
@@ -309,7 +316,7 @@ begin
                     Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "10";
-                    B_operand1     <= RA_data_sig;
+                    B_operand1     <= RA_data_sig_FW;
                     B_operand2     <= dispsformatted_sig;
                     B_addr         <= B_adder_sig;
                 when "1000101" => -- BR.Z
@@ -323,7 +330,7 @@ begin
                     Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "01";
-                    B_operand1     <= RA_data_sig;
+                    B_operand1     <= RA_data_sig_FW;
                     B_operand2     <= dispsformatted_sig;
                     B_addr         <= B_adder_sig;
                 when "1000110" => -- BR.SUB
@@ -337,7 +344,7 @@ begin
                     Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "11";
-                    B_operand1     <= RA_data_sig;
+                    B_operand1     <= RA_data_sig_FW;
                     B_operand2     <= dispsformatted_sig;
                     B_addr         <= B_adder_sig;
                 when "1000111" => --RETURN
@@ -353,7 +360,7 @@ begin
                     B_Op           <= "00";
                     B_operand1     <= (others=>'0');
                     B_operand2     <= (others=>'0');
-                    B_addr         <= RA_data_sig;
+                    B_addr         <= RA_data_sig_FW;
                 when others =>
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -368,7 +375,20 @@ begin
                     B_operand1     <= (others=>'0');
                     B_operand2     <= (others=>'0');
                     B_addr         <= (others=>'0');           
-                end case;                   
-        end if;
+                end case;
+        end if;                           
     end process decode_process;
+    forwarding_process : process(FW_A_En, FW_B_En, FW_A_data, FW_B_data, RA_data_sig, RB_data_sig)
+    begin
+        if FW_A_En = '1' then -- forwarding for RA
+            RA_data_sig_FW <= FW_A_data;
+        else
+            RA_data_sig_FW <= RA_data_sig;
+        end if;
+        if FW_B_En = '1' then -- forwarding for RB
+            RB_data_sig_FW <= FW_B_data;
+        else
+            RB_data_sig_FW <= RB_data_sig;
+        end if;
+    end process forwarding_process;
 end behavioral;
