@@ -17,7 +17,7 @@ end alu;
 
 architecture behavioral of alu is
     -- Signals
-    signal addsubOut, nandOut, multupperOut, multlowerOut, barrelshiftOut, testOut, resultTemp : std_logic_vector(15 downto 0); -- buffers for different operations
+    signal addsubOut, nandOut, multupperOut, multlowerOut, barrelshiftOut, resultTemp : std_logic_vector(15 downto 0); -- buffers for different operations
     signal bsDir: std_logic; -- barrel shift direction which is set from 
 
     -- Components
@@ -59,15 +59,12 @@ architecture behavioral of alu is
         multiplier : multiplier_16bit port map (A => Input1, B => Input2, Result_high => multupperOut, Result_low => multlowerOut);
         barrelshift : barrelshift_16bit port map (direction => bsdir , shiftamount => shiftAmt, A => Input1, ShiftedResult => barrelshiftOut );
         bsdir <= (not ALU_op(1)) and ALU_op(0); -- evaluates to 1 for shift left opcode and 0 for right shift
-        TestOut <= Input1; -- set TestOut to RA
-
+        
         -- Calculating Results 
-        resultTemp <= addsubOut when (ALU_op = "001") or (ALU_op = "010") else
+        Result <= addsubOut when (ALU_op = "001") or (ALU_op = "010") else
                   multlowerOut when ALU_op = "011" else
                   nandOut when ALU_op = "100" else
                   barrelshiftOut when (ALU_op = "101") or (ALU_op = "110") else
-                  TestOut when (ALU_op = "111");
-         -- Setting Result         
-        Result <= resultTemp;
+                  (others => '0');
         Resultupper <= multupperout;
 end behavioral;

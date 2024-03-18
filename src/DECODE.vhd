@@ -17,8 +17,6 @@ entity DECODE is
         RB_data        : out std_logic_vector (15 downto 0); -- Register B data
         RW_addr        : out std_logic_vector (2 downto 0); -- Register Write Address
         RW_En          : out std_logic; -- Register Write Enable
-        -- Test
-        Test_En        : out std_logic; -- Signal to enable Test in execute stage (overrides ALU when passing into Mem/WB) 
         -- Branching
         PC             : in std_logic_vector (15 downto 0); -- recieved PC+2 (needs to be decremented for branching)
         B_addr         : out std_logic_vector (15 downto 0); -- branch address to give to FETCH
@@ -156,7 +154,6 @@ begin
             RW_En          <= '0';
             IN_En          <= '0';
             port_Out       <= (others => '0');
-            Test_En        <= '0';
             B_En           <= '0';
             B_Op           <= "00";
             B_operand1     <= (others => '0');
@@ -172,7 +169,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     IN_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '0';
                     B_Op           <= "00";
                     B_operand1     <= (others => '0');
@@ -186,7 +182,6 @@ begin
                     RW_addr        <= IR_in (8 downto 6);
                     RW_En          <= '1';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '0';
                     B_Op           <= "00";
                     B_operand1     <= (others => '0');
@@ -200,21 +195,19 @@ begin
                     RW_addr        <= IR_in (8 downto 6);
                     RW_En          <= '1';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '0';
                     B_Op           <= "00"; 
                     B_operand1     <= (others => '0');
                     B_operand2     <= (others => '0');
                     B_addr         <= (others => '0');  
                 when "0000111" => -- Test
-                    ALU_op         <= (others => '0');
+                    ALU_op         <= IR_in (11 downto 9);
                     shiftAmt       <= (others => '0');
                     RA_Addr_sig    <= IR_in (8 downto 6);
                     RB_Addr_sig    <= (others => '0');
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '1';
                     B_En           <= '0';
                     B_Op           <= "00";
                     B_operand1     <= (others => '0');
@@ -228,7 +221,6 @@ begin
                     RW_Addr        <= (others => '0');
                     RW_En          <= '0'; 
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '0';
                     B_Op           <= "00";
                     B_operand1     <= (others => '0');
@@ -243,7 +235,6 @@ begin
                     RW_Addr        <= IR_in (8 downto 6);
                     RW_En          <= '1'; 
                     IN_En          <= '1';
-                    Test_En        <= '0';
                     B_En           <= '0';
                     B_Op           <= "00";
                     B_operand1     <= (others => '0');
@@ -257,7 +248,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     IN_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "00";
                     B_operand1     <= PC_dec_sig;
@@ -270,8 +260,7 @@ begin
                     RB_Addr_sig    <= (others => '0');
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
-                    In_En          <= '0';
-                    Test_En        <= '0';                   
+                    In_En          <= '0';                   
                     B_En           <= '1';
                     B_Op           <= "10";
                     B_operand1     <= PC_dec_sig;
@@ -285,7 +274,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "01";
                     B_operand1     <= PC_dec_sig;
@@ -299,7 +287,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "00";
                     B_operand1     <= RA_data_sig_FW;
@@ -313,7 +300,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "10";
                     B_operand1     <= RA_data_sig_FW;
@@ -327,7 +313,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "01";
                     B_operand1     <= RA_data_sig_FW;
@@ -341,7 +326,6 @@ begin
                     RW_addr        <= "111";
                     RW_En          <= '1';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "11";
                     B_operand1     <= RA_data_sig_FW;
@@ -355,7 +339,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '1';
                     B_Op           <= "00";
                     B_operand1     <= (others=>'0');
@@ -369,7 +352,6 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    Test_En        <= '0';
                     B_En           <= '0';
                     B_Op           <= "00";
                     B_operand1     <= (others=>'0');
