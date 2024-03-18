@@ -1,6 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+-- flushing first 2 latches
+-- adding forwarding logic
+
 entity CONTROL is 
     port(
         Clk, Rst       : in std_logic;
@@ -77,7 +80,6 @@ architecture behavioral of CONTROL is
         signal Instruction_in_sig : std_logic_vector (15 downto 0);
         signal IF_ID_IR : std_logic_vector (15 downto 0);
         
-        
         -- ID/EX
         signal ID_EX_ALU_op     : std_logic_vector (2 downto 0);
         signal ID_EX_Shiftamt   : std_logic_vector (3 downto 0);
@@ -95,68 +97,70 @@ architecture behavioral of CONTROL is
         signal Z_flag, N_flag   : std_logic;
         signal Moverflow_Flag   : std_logic;
         
-        
         -- EX/WB
         signal WB_ID_data       : std_logic_vector (15 downto 0);
         signal WB_ID_addr       : std_logic_vector (2 downto 0);
         signal WB_ID_En         : std_logic;       
 begin
 
-    Clk_sig <= Clk;
-    Rst_sig <= Rst;
-    Instruction_in_sig <= IR_In_from_TB;
-    
-     FetchStage : FETCH port map (
-          Clk     => Clk_sig,          
-          Reset   => Rst_sig,          
-          IR_out  => IF_ID_IR,       
-          IR_in   => Instruction_in_sig          
-     );
-     
-     Decoder : DECODE port map (
-          Clk       => Clk_sig, 
-          Reset     => Rst_sig,     
-          instr_In  => IF_ID_IR,       
-          ALU_op    => ID_EX_ALU_op,         
-          shiftAmt  => ID_EX_Shiftamt,       
-          RA_data   => ID_EX_RA_data,         
-          RB_data   => ID_EX_RB_data,         
-          RW_addr   => ID_EX_RW_addr,        
-          RW_En     => ID_EX_RW_En,                
-          IN_En     => ID_EX_IN_En,          
-          port_Out  => Output_sig,         
-          WB_data   => WB_ID_data,        
-          WB_addr   => WB_ID_addr,       
-          WB_En     => WB_ID_En        
-    );
-    
-    ExecuteStage : EXECUTE port map (
-           Clk         => Clk_sig,        
-           ALU_op      => ID_EX_ALU_op,     
-           shiftAmt    => ID_EX_Shiftamt,    
-           RA_data     => ID_EX_RA_data,   
-           RB_data     => ID_EX_RB_data,
-           RW_addr_in  => ID_EX_RW_addr,
-           RW_En_in    => ID_EX_RW_En,
-           RW_addr_out => EX_WB_RW_addr,
-           RW_En_out   => EX_WB_RW_En,        
-           RW_data_out => EX_WB_RW_data, 
-           Z           => Z_flag,          
-           N           => N_flag,
-           Moverflow   => Moverflow_flag,              
-           IN_IN       => Input_sig,      
-           IN_En       => ID_EX_IN_En     
-      );
-      
-      WriteBackStage: WRITEBACK port map (
-           Clk       => Clk_sig, 
-           Reset     => Rst_sig,
-           W_data    => EX_WB_RW_data, 
-           W_addr    => EX_WB_RW_addr,         
-           W_En      => EX_WB_RW_En,            
-           WB_data   => WB_ID_data,   
-           WB_addr   => WB_ID_addr,  
-           WB_En     => WB_ID_En      
-      );       
+    process(Clk)
+    begin
+        Clk_sig <= Clk;
+        Rst_sig <= Rst;
+        Instruction_in_sig <= IR_In_from_TB;
+        
+        FetchStage : FETCH port map (
+            Clk     => Clk_sig,          
+            Reset   => Rst_sig,          
+            IR_out  => IF_ID_IR,       
+            IR_in   => Instruction_in_sig          
+        );
+        
+        Decoder : DECODE port map (
+            Clk       => Clk_sig, 
+            Reset     => Rst_sig,     
+            instr_In  => IF_ID_IR,       
+            ALU_op    => ID_EX_ALU_op,         
+            shiftAmt  => ID_EX_Shiftamt,       
+            RA_data   => ID_EX_RA_data,         
+            RB_data   => ID_EX_RB_data,         
+            RW_addr   => ID_EX_RW_addr,        
+            RW_En     => ID_EX_RW_En,                
+            IN_En     => ID_EX_IN_En,          
+            port_Out  => Output_sig,         
+            WB_data   => WB_ID_data,        
+            WB_addr   => WB_ID_addr,       
+            WB_En     => WB_ID_En        
+        );
+        
+        ExecuteStage : EXECUTE port map (
+            Clk         => Clk_sig,        
+            ALU_op      => ID_EX_ALU_op,     
+            shiftAmt    => ID_EX_Shiftamt,    
+            RA_data     => ID_EX_RA_data,   
+            RB_data     => ID_EX_RB_data,
+            RW_addr_in  => ID_EX_RW_addr,
+            RW_En_in    => ID_EX_RW_En,
+            RW_addr_out => EX_WB_RW_addr,
+            RW_En_out   => EX_WB_RW_En,        
+            RW_data_out => EX_WB_RW_data, 
+            Z           => Z_flag,          
+            N           => N_flag,
+            Moverflow   => Moverflow_flag,              
+            IN_IN       => Input_sig,      
+            IN_En       => ID_EX_IN_En     
+        );
+        
+        WriteBackStage: WRITEBACK port map (
+            Clk       => Clk_sig, 
+            Reset     => Rst_sig,
+            W_data    => EX_WB_RW_data, 
+            W_addr    => EX_WB_RW_addr,         
+            W_En      => EX_WB_RW_En,            
+            WB_data   => WB_ID_data,   
+            WB_addr   => WB_ID_addr,  
+            WB_En     => WB_ID_En      
+        ); 
+    end process;      
         
 end behavioral;
