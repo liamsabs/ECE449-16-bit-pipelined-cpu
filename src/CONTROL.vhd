@@ -148,10 +148,6 @@ architecture behavioral of CONTROL is
         signal ID_WB_En         : std_logic;
 
         -- Branching
-        signal CPU_br_addr      : std_logic_vector (15 downto 0);
-        signal CPU_br_CTRL      : std_logic;
-        signal ID_IF_br_addr    : std_logic_vector (15 downto 0);
-        signal ID_IF_br_CTRL    : std_logic;
         signal EX_IF_br_addr    : std_logic_vector (15 downto 0);
         signal EX_IF_br_CTRL    : std_logic;
         
@@ -162,17 +158,12 @@ begin
         Clk_sig <= Clk;
         Rst_sig <= Rst;
         Instruction_in_sig <= IR_In_from_TB;
-
-        --assign branching
-        CPU_br_addr;
-        CPU_br_CTRL;
-
         
         FetchStage : FETCH port map (
             Reset    => Rst_sig,
             PC_reset => Reset_button,
-            BR_addr  => CPU_br_addr,
-            BR_CTRL  => CPU_br_CTRL,
+            BR_addr  => EX_IF_br_addr,
+            BR_CTRL  => EX_IF_br_CTRL,
             IR_out   => IF_ID_IR,       
             IR_in    => Instruction_in_sig,
             PC_out   => IF_ID_PC          
@@ -192,8 +183,8 @@ begin
             RW_addr   => ID_EX_RW_addr,        
             RW_En     => ID_EX_RW_En,
             PC        => ID_ID_PC,
-            B_addr    => ID_IF_br_addr,
-            B_En      => ID_IF_br_CTRL,
+            B_addr    => ID_EX_br_addr,
+            B_En      => ID_EX_br_En,
             B_op      => ID_EX_br_OP,
             Br_sub_PC => ID_EX_br_sub_PC,
             IN_En     => ID_EX_IN_En,          
