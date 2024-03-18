@@ -28,7 +28,12 @@ entity DECODE is
         BR_sub_PC      : out std_logic_vector (15 downto 0); -- PC+2 which is written to R7 
         -- I/0 Handling
         IN_En          : out std_logic; -- enables input to be read in execute stage 
-        port_Out       : out std_logic_vector (15 downto 0) -- output from OUT instruction
+        port_Out       : out std_logic_vector (15 downto 0); -- output from OUT instruction
+        -- Forwarding
+        FW_A_data      : in std_logic_vector (15 downto 0);
+        FW_A_En        : in std_logic;
+        FW_B_data      : in std_logic_vector (15 downto 0);
+        FW_B_En        : in std_logic
     );
 end DECODE;
 
@@ -166,7 +171,7 @@ begin
                     B_operand1     <= (others => '0');
                     B_operand2     <= (others => '0');
                     B_addr         <= (others => '0');
-                when "0000001" | "0000010" | "0000011" | "0000100"  => --ADD, SUB, MULT, NAND (A1)
+                when "0000001" | "0000010" | "0000011" | "0000100"  => -- ADD, SUB, MULT, NAND (A1)
                     ALU_op         <= IR_in (11 downto 9);
                     shiftAmt       <= (others => '0');
                     RA_addr_sig    <= IR_in (5 downto 3);
