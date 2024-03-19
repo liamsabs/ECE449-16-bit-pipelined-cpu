@@ -8,29 +8,29 @@ entity CONTROL is
     port(
         Clk, Rst       : in std_logic;
         IR_In_from_TB  : in std_logic_vector (15 downto 0);
-        Data_In        : in std_logic_vector (15 downto 0);
-        Data_Out       : out std_logic_vector (15 downto 0);
+        --Data_In        : in std_logic_vector (15 downto 0);
+        --Data_Out       : out std_logic_vector (15 downto 0);
         Reset_button   : in std_logic
     );
 end CONTROL;
 
 architecture behavioral of CONTROL is
     component FETCH is
-        port(
-            Reset           : in std_logic;
+        port (
+            IF_Reset        : in std_logic;
             PC_reset        : in std_logic;                         -- Resets PC to [val?]
             Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
             Br_CTRL         : in std_logic;                         -- input signal for PC MUX
-            IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for Format A Test
+            IF_IR_in        : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for Format A Test
             IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
-            PC_out          : out std_logic_vector(15 downto 0);    -- PC for decoder
+            PC_out          : out std_logic_vector(15 downto 0)    -- PC for decoder
         );
     end component;
     component DECODE is
         port (
             Clk            : in std_logic; -- Clock Input
-            Reset          : in std_logic; -- Reset
-            IR_in          : in std_logic_vector (15 downto 0);     -- Instruction to Decode
+            ID_Reset       : in std_logic; -- Reset
+            ID_IR_in       : in std_logic_vector (15 downto 0);     -- Instruction to Decode
             -- WriteBack
             WB_data        : in std_logic_vector (15 downto 0);     -- Write Back data
             WB_addr        : in std_logic_vector (2 downto 0);      -- Write Back address 
@@ -93,7 +93,8 @@ architecture behavioral of CONTROL is
     end component;
    component WRITEBACK is
         port (
-            Clk, Reset  : in std_logic;
+            Clk         : in std_logic; 
+            WB_Reset    : in std_logic;
             W_data      : in std_logic_vector (15 downto 0);
             W_addr      : in std_logic_vector (2 downto 0);
             W_En        : in std_logic;
@@ -141,10 +142,10 @@ architecture behavioral of CONTROL is
         signal WB_ID_En         : std_logic;   
         
         -- Forwarding
-        signal ID_A_addr        : std_logic_vector (15 downto 0);
+        signal ID_A_addr        : std_logic_vector (2 downto 0);
         signal FW_A_data        : std_logic_vector (15 downto 0);
         signal FW_A_En          : std_logic;
-        signal ID_B_addr        : std_logic_vector (15 downto 0);
+        signal ID_B_addr        : std_logic_vector (2 downto 0);
         signal FW_B_data        : std_logic_vector (15 downto 0);
         signal FW_B_En          : std_logic;
 
@@ -159,26 +160,20 @@ architecture behavioral of CONTROL is
         
 begin
 
-    process(Clk)
-    begin
-        Clk_sig <= Clk;
-        Rst_sig <= Rst;
-        Instruction_in_sig <= IR_In_from_TB;
-        
-        FetchStage : FETCH port map (
-            Reset    => Rst_sig,
-            PC_reset => Reset_button,
-            BR_addr  => EX_IF_br_addr,
-            BR_CTRL  => EX_IF_br_CTRL,
-            IR_out   => IF_ID_IR,       
-            IR_in    => Instruction_in_sig,
-            PC_out   => IF_ID_PC          
+           FetchStage : FETCH port map (
+            IF_Reset    => Rst_sig,
+            PC_reset    => Reset_button,
+            BR_addr     => EX_IF_br_addr,
+            BR_CTRL     => EX_IF_br_CTRL,
+            IR_out      => IF_ID_IR,       
+            IF_IR_in    => Instruction_in_sig,
+            PC_out      => IF_ID_PC          
         );
         
         Decoder : DECODE port map (
             Clk       => Clk_sig, 
-            Reset     => Rst_sig,     
-            instr_In  => IF_ID_IR,
+            ID_Reset  => Rst_sig,     
+            ID_IR_in  => IF_ID_IR,
             WB_data   => ID_WB_data,
             WB_addr   => ID_WB_addr,
             WB_En     => ID_WB_En,
@@ -188,7 +183,7 @@ begin
             RB_data   => ID_EX_RB_data,         
             RW_addr   => ID_EX_RW_addr,        
             RW_En     => ID_EX_RW_En,
-            PC        => ID_ID_PC,
+            PC        => IF_ID_PC,
             B_addr    => ID_EX_br_addr,
             B_En      => ID_EX_br_En,
             B_op      => ID_EX_br_OP,
@@ -213,13 +208,13 @@ begin
             RW_addr_out => EX_WB_RW_addr,
             RW_En_out   => EX_WB_RW_En,        
             RW_data_out => EX_WB_RW_data, 
-            Moverflow   => Moverflow_flag
+            Moverflow   => Moverflow_flag,
             Z_flag      => Z_flag,          
             N_flag      => N_flag,
             BR_En       => ID_EX_br_En,
             BR_op       => ID_EX_br_OP,
-            BR_CTRL     => EX_IF_br_CTRL
-            BR_addr_in  => ID_EX_br_addr
+            BR_CTRL     => EX_IF_br_CTRL,
+            BR_addr_in  => ID_EX_br_addr,
             BR_addr_out => EX_IF_br_addr,
             BR_sub_PC   => ID_EX_br_sub_PC,
             IN_data     => Input_sig,      
@@ -228,24 +223,31 @@ begin
         
         WriteBackStage: WRITEBACK port map (
             Clk       => Clk_sig, 
-            Reset     => Rst_sig,
+            WB_Reset  => Rst_sig,
             W_data    => EX_WB_RW_data, 
-            W_addr    => EX_WB_RW_addr,         
+            W_addr    => EX_WB_RW_addr (2 downto 0),         
             W_En      => EX_WB_RW_En,            
             WB_data   => WB_ID_data,   
             WB_addr   => WB_ID_addr,  
             WB_En     => WB_ID_En      
         );
         
+        Clk_sig <= Clk;
+        Rst_sig <= Rst;
+        Instruction_in_sig <= IR_In_from_TB; 
+   
+    process(Clk, Rst, IR_in_from_TB, EX_WB_RW_data, WB_ID_data, ID_A_addr, ID_B_addr, EX_WB_RW_addr, WB_ID_addr)
+    begin
+               
         -- Forwarding logic
-        if EX_WB_RW_addr = ID_A_addr
-            FW_A_data <= EX_WB_RW_addr;
-        elsif EX_WB_RW_addr = ID_B_addr
-            FW_B_data <= EX_WB_RW_addr;
-        elsif WB_ID_addr = ID_A_addr
-            FW_A_data <= WB_ID_addr;
-        elsif WB_ID_addr = ID_B_addr
-            FW_B_data <= WB_ID_addr;
+        if EX_WB_RW_addr = ID_A_addr then
+            FW_A_data <= EX_WB_RW_data;
+        elsif EX_WB_RW_addr = ID_B_addr then
+            FW_B_data <= EX_WB_RW_data;
+        elsif WB_ID_addr = ID_A_addr then
+            FW_A_data <= WB_ID_data;
+        elsif WB_ID_addr = ID_B_addr then
+            FW_B_data <= WB_ID_data;
         end if;
 
     end process;      
