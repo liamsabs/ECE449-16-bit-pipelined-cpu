@@ -30,35 +30,35 @@ architecture behavioral of CONTROL is
         port (
             Clk            : in std_logic; -- Clock Input
             Reset          : in std_logic; -- Reset
-            IR_in          : in std_logic_vector (15 downto 0); -- Instruction to Decode
+            IR_in          : in std_logic_vector (15 downto 0);     -- Instruction to Decode
             -- WriteBack
-            WB_data        : in std_logic_vector (15 downto 0); -- Write Back data
-            WB_addr        : in std_logic_vector (2 downto 0); -- Write Back address 
-            WB_En          : in std_logic; -- Write Back Enable
+            WB_data        : in std_logic_vector (15 downto 0);     -- Write Back data
+            WB_addr        : in std_logic_vector (2 downto 0);      -- Write Back address 
+            WB_En          : in std_logic;                          -- Write Back Enable
             -- Execute and Register Write Operands
-            ALU_op         : out std_logic_vector (2 downto 0); -- ALU operands
-            shiftAmt       : out std_logic_vector (3 downto 0); -- shift amount
-            RA_data        : out std_logic_vector (15 downto 0); -- Register A data
-            RB_data        : out std_logic_vector (15 downto 0); -- Register B data
-            RW_addr        : out std_logic_vector (2 downto 0); -- Register Write Address
-            RW_En          : out std_logic; -- Register Write Enable
+            ALU_op         : out std_logic_vector (2 downto 0);     -- ALU operands
+            shiftAmt       : out std_logic_vector (3 downto 0);     -- shift amount
+            RA_data        : out std_logic_vector (15 downto 0);    -- Register A data
+            RB_data        : out std_logic_vector (15 downto 0);    -- Register B data
+            RW_addr        : out std_logic_vector (2 downto 0);     -- Register Write Address
+            RW_En          : out std_logic;                         -- Register Write Enable
             -- Branching
-            PC             : in std_logic_vector (15 downto 0); -- recieved PC+2 (needs to be decremented for branching)
-            B_addr         : out std_logic_vector (15 downto 0); -- branch address to give to FETCH
+            PC             : in std_logic_vector (15 downto 0);     -- recieved PC+2 (needs to be decremented for branching)
+            B_addr         : out std_logic_vector (15 downto 0);    -- branch address to give to FETCH
             B_En           : out std_logic; -- Indicates that the instruction is a branch (still need to check if we can branch in EX based on B_Op)
-            B_op           : out std_logic_vector (1 downto 0); -- branch condition
+            B_op           : out std_logic_vector (1 downto 0);     -- branch condition
             -- For BR.SUB
-            BR_sub_PC      : out std_logic_vector (15 downto 0); -- PC+2 which is written to R7 during BR_sub 
+            BR_sub_PC      : out std_logic_vector (15 downto 0);    -- PC+2 which is written to R7 during BR_sub 
             -- I/0 Handling
-            IN_En          : out std_logic; -- enables input to be read in execute stage 
-            port_Out       : out std_logic_vector (15 downto 0); -- output from OUT instruction
+            IN_En          : out std_logic;                         -- enables input to be read in execute stage 
+            port_Out       : out std_logic_vector (15 downto 0);    -- output from OUT instruction
             -- Forwarding
-            RA_addr        : out std_logic_vector (2 downto 0); -- address of RA used for forwarding
-            FW_A_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RA
-            FW_A_En        : in std_logic; -- input to be used to determine if forwarding RA
-            RB_addr        : out std_logic_vector (2 downto 0); -- address of RB used for forwarding
-            FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RA
-            FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
+            RA_addr        : out std_logic_vector (2 downto 0);     -- address of RA used for forwarding
+            FW_A_data      : in std_logic_vector (15 downto 0);     -- input data from forwarding for RA
+            FW_A_En        : in std_logic;                          -- input to be used to determine if forwarding RA
+            RB_addr        : out std_logic_vector (2 downto 0);     -- address of RB used for forwarding
+            FW_B_data      : in std_logic_vector (15 downto 0);     -- input data from forwarding for RA
+            FW_B_En        : in std_logic                           -- input to be used to determine if forwarding RB
     );
     end component;
     component EXECUTE is
@@ -75,9 +75,9 @@ architecture behavioral of CONTROL is
             RW_En_out      : out std_logic;                             -- OUT EN for WB stage
             RW_data_out    : out std_logic_vector (15 downto 0);        -- data to be written back
             -- Flags to be set
-            Moverflow      : out std_logic; -- Multiplcation overflow flag output for controller
-            Z_flag         : out std_logic; -- Zero flag used for testing
-            N_flag         : out std_logic; -- Negative flag used for testing
+            Moverflow      : out std_logic;                             -- Multiplcation overflow flag output for controller
+            Z_flag         : out std_logic;                             -- Zero flag used for testing
+            N_flag         : out std_logic;                             -- Negative flag used for testing
             -- Branching inputs
             BR_En          : in std_logic;
             BR_op          : in std_logic_vector(1 downto 0);       
@@ -135,12 +135,18 @@ architecture behavioral of CONTROL is
         signal Z_flag, N_flag   : std_logic;
         signal Moverflow_Flag   : std_logic;
         
-        -- EX/WB
+        -- WB/ID
         signal WB_ID_data       : std_logic_vector (15 downto 0);
         signal WB_ID_addr       : std_logic_vector (2 downto 0);
         signal WB_ID_En         : std_logic;   
         
         -- Forwarding
+        signal ID_A_addr        : std_logic_vector (15 downto 0);
+        signal FW_A_data        : std_logic_vector (15 downto 0);
+        signal FW_A_En          : std_logic;
+        signal ID_B_addr        : std_logic_vector (15 downto 0);
+        signal FW_B_data        : std_logic_vector (15 downto 0);
+        signal FW_B_En          : std_logic;
 
         -- Write-back
         signal ID_WB_data       : std_logic_vector (15 downto 0);
@@ -189,9 +195,12 @@ begin
             Br_sub_PC => ID_EX_br_sub_PC,
             IN_En     => ID_EX_IN_En,          
             port_Out  => Output_sig,         
-            WB_data   => WB_ID_data,        
-            WB_addr   => WB_ID_addr,       
-            WB_En     => WB_ID_En        
+            RA_addr   => ID_A_addr,
+            FW_A_data => FW_A_data,
+            FW_A_En   => FW_A_En,
+            RB_addr   => ID_B_addr,
+            FW_B_data => FW_B_data,
+            FW_B_En   => FW_B_En  
         );
         
         ExecuteStage : EXECUTE port map (
@@ -226,7 +235,19 @@ begin
             WB_data   => WB_ID_data,   
             WB_addr   => WB_ID_addr,  
             WB_En     => WB_ID_En      
-        ); 
+        );
+        
+        -- Forwarding logic
+        if EX_WB_RW_addr = ID_A_addr
+            FW_A_data <= EX_WB_RW_addr;
+        elsif EX_WB_RW_addr = ID_B_addr
+            FW_B_data <= EX_WB_RW_addr;
+        elsif WB_ID_addr = ID_A_addr
+            FW_A_data <= WB_ID_addr;
+        elsif WB_ID_addr = ID_B_addr
+            FW_B_data <= WB_ID_addr;
+        end if;
+
     end process;      
         
 end behavioral;

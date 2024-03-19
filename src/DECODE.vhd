@@ -32,7 +32,7 @@ entity DECODE is
         FW_A_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RA
         FW_A_En        : in std_logic; -- input to be used to determine if forwarding RA
         RB_addr        : out std_logic_vector (2 downto 0); -- address of RB used for forwarding
-        FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RA
+        FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RB
         FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
     );
 end DECODE;
