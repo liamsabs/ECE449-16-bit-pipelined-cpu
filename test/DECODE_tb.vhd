@@ -121,7 +121,7 @@ begin
     Reset <= '1';
     wait for 50 ns;
     IR_in <=  "0000000000000000";  -- You can modify IR_in for different test cases
-    PC <= X"0000";
+    PC <= X"0002";
     wait for 50 ns;
     Reset <= '0';   
     wait for 50 ns;
