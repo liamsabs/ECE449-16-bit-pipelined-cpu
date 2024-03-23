@@ -4,8 +4,8 @@ use ieee.std_logic_1164.all;
 entity DECODE is
     port (
         Clk            : in std_logic; -- Clock Input
-        ID_Reset          : in std_logic; -- Reset
-        ID_IR_in          : in std_logic_vector (15 downto 0); -- Instruction to Decode
+        Reset          : in std_logic; -- Reset
+        ID_IR_in       : in std_logic_vector (15 downto 0); -- Instruction to Decode
         -- WriteBack
         WB_data        : in std_logic_vector (15 downto 0); -- Write Back data
         WB_addr        : in std_logic_vector (2 downto 0); -- Write Back address 
@@ -19,9 +19,9 @@ entity DECODE is
         RW_En          : out std_logic; -- Register Write Enable
         -- Branching
         PC             : in std_logic_vector (15 downto 0); -- recieved PC+2 (needs to be decremented for branching)
-        B_addr         : out std_logic_vector (15 downto 0); -- branch address to give to FETCH
-        B_En           : out std_logic; -- Indicates that the instruction is a branch (still need to check if we can branch in EX based on B_Op)
-        B_op           : out std_logic_vector (1 downto 0); -- branch condition
+        BR_addr        : out std_logic_vector (15 downto 0); -- branch address to give to FETCH
+        BR_En          : out std_logic; -- Indicates that the instruction is a branch (still need to check if we can branch in EX based on BR_Op)
+        BR_op          : out std_logic_vector (1 downto 0); -- branch condition
         -- For BR.SUB
         BR_sub_PC      : out std_logic_vector (15 downto 0); -- PC+2 which is written to R7 during BR_sub 
         -- I/0 Handling
@@ -92,9 +92,9 @@ signal disp1_sig          : std_logic_vector (8 downto 0); -- bits from IR for d
 signal disp1formatted_sig : std_logic_vector (15 downto 0); -- disp1 post formatting (sign extended to 16 bits)
 signal disps_sig          : std_logic_vector (5 downto 0); -- bits from IR for disps to be formatted
 signal dispsformatted_sig : std_logic_vector (15 downto 0); -- disps post formatting (sign extended to 16 bits)
-signal B_operand1         : std_logic_vector (15 downto 0); -- operand 1 for branch address calculation
-signal B_operand2         : std_logic_vector (15 downto 0); -- operand 2 for branch address calculation
-signal B_adder_sig        : std_logic_vector (15 downto 0); -- signal from the adder used for branch computation
+signal BR_operand1        : std_logic_vector (15 downto 0); -- operand 1 for branch address calculation
+signal BR_operand2        : std_logic_vector (15 downto 0); -- operand 2 for branch address calculation
+signal BR_Adder_sig       : std_logic_vector (15 downto 0); -- signal from the adder used for branch computation
 
 begin
 
@@ -124,10 +124,10 @@ begin
         Sum => PC_dec_sig
     );
     B_adder : FullAdder_16bit port map ( -- adder used to compute branch address
-        A => B_operand1,
-        B => B_operand2,
+        A => BR_operand1,
+        B => BR_operand2,
         Cin => '0',
-        Sum => B_adder_sig
+        Sum => BR_Adder_sig
     );
     
     -- Decode Output Signal Assignment
@@ -143,7 +143,7 @@ begin
     disp1_sig <= ID_IR_in (8 downto 0);
     disps_sig <= ID_IR_in (5 downto 0);
     
-    decode_process : process (ID_Reset, opCode, ID_IR_in, RA_data_sig_FW, PC_dec_sig, disp1formatted_sig, B_adder_sig, dispsformatted_sig, B_operand1, B_operand2)
+    decode_process : process (ID_Reset, opCode, ID_IR_in, RA_data_sig_FW, PC_dec_sig, disp1formatted_sig, BR_Adder_sig, dispsformatted_sig, BR_operand1, BR_operand2)
     begin
         if ID_Reset = '1' then
             ALU_op         <= (others => '0');
@@ -154,11 +154,11 @@ begin
             RW_En          <= '0';
             IN_En          <= '0';
             port_Out       <= (others => '0');
-            B_En           <= '0';
-            B_Op           <= "00";
-            B_operand1     <= (others => '0');
-            B_operand2     <= (others => '0');
-            B_addr         <= (others => '0');       
+            BR_En          <= '0';
+            BR_Op          <= "00";
+            BR_operand1    <= (others => '0');
+            BR_operand2    <= (others => '0');
+            BR_addr        <= (others => '0');       
         else
            case opcode is
                 when "0000000" =>
@@ -169,11 +169,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     IN_En          <= '0';
-                    B_En           <= '0';
-                    B_Op           <= "00";
-                    B_operand1     <= (others => '0');
-                    B_operand2     <= (others => '0');
-                    B_addr         <= (others => '0');
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others => '0');
+                    BR_operand2    <= (others => '0');
+                    BR_addr        <= (others => '0');
                 when "0000001" | "0000010" | "0000011" | "0000100"  => -- ADD, SUB, MULT, NAND (A1)
                     ALU_op         <= ID_IR_in (11 downto 9);
                     shiftAmt       <= (others => '0');
@@ -182,11 +182,11 @@ begin
                     RW_addr        <= ID_IR_in (8 downto 6);
                     RW_En          <= '1';
                     In_En          <= '0';
-                    B_En           <= '0';
-                    B_Op           <= "00";
-                    B_operand1     <= (others => '0');
-                    B_operand2     <= (others => '0');
-                    B_addr         <= (others => '0');                    
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others => '0');
+                    BR_operand2    <= (others => '0');
+                    BR_addr        <= (others => '0');                    
                 when "0000101" | "0000110" => -- SHL, SHR
                     ALU_op         <= ID_IR_in (11 downto 9);
                     shiftAmt       <= ID_IR_in (3 downto 0);
@@ -195,11 +195,11 @@ begin
                     RW_addr        <= ID_IR_in (8 downto 6);
                     RW_En          <= '1';
                     In_En          <= '0';
-                    B_En           <= '0';
-                    B_Op           <= "00"; 
-                    B_operand1     <= (others => '0');
-                    B_operand2     <= (others => '0');
-                    B_addr         <= (others => '0');  
+                    BR_En          <= '0';
+                    BR_Op          <= "00"; 
+                    BR_operand1    <= (others => '0');
+                    BR_operand2    <= (others => '0');
+                    BR_addr        <= (others => '0');  
                 when "0000111" => -- Test
                     ALU_op         <= ID_IR_in (11 downto 9);
                     shiftAmt       <= (others => '0');
@@ -208,11 +208,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '0';
-                    B_Op           <= "00";
-                    B_operand1     <= (others => '0');
-                    B_operand2     <= (others => '0');
-                    B_addr         <= (others => '0');  
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others => '0');
+                    BR_operand2    <= (others => '0');
+                    BR_addr        <= (others => '0');  
                 when "0100000" => -- Out
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');   
@@ -221,11 +221,11 @@ begin
                     RW_Addr        <= (others => '0');
                     RW_En          <= '0'; 
                     In_En          <= '0';
-                    B_En           <= '0';
-                    B_Op           <= "00";
-                    B_operand1     <= (others => '0');
-                    B_operand2     <= (others => '0');
-                    B_addr         <= (others => '0');                  
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others => '0');
+                    BR_operand2    <= (others => '0');
+                    BR_addr        <= (others => '0');                  
                     port_Out       <= RA_data_sig_FW;
                 when "0100001" => --In
                     ALU_op         <= (others => '0');
@@ -235,11 +235,11 @@ begin
                     RW_Addr        <= ID_IR_in (8 downto 6);
                     RW_En          <= '1'; 
                     IN_En          <= '1';
-                    B_En           <= '0';
-                    B_Op           <= "00";
-                    B_operand1     <= (others => '0');
-                    B_operand2     <= (others => '0');
-                    B_addr         <= (others => '0'); 
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others => '0');
+                    BR_operand2    <= (others => '0');
+                    BR_addr        <= (others => '0'); 
                 when "1000000" => -- BRR
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -248,11 +248,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     IN_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "00";
-                    B_operand1     <= PC_dec_sig;
-                    B_operand2     <= disp1formatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En          <= '1';
+                    BR_Op          <= "00";
+                    BR_operand1    <= PC_dec_sig;
+                    BR_operand2    <= disp1formatted_sig;
+                    BR_addr        <= BR_Adder_sig;
                 when "1000001" => -- BRR.N
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -261,11 +261,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';                   
-                    B_En           <= '1';
-                    B_Op           <= "10";
-                    B_operand1     <= PC_dec_sig;
-                    B_operand2     <= disp1formatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En          <= '1';
+                    BR_Op          <= "10";
+                    BR_operand1    <= PC_dec_sig;
+                    BR_operand2    <= disp1formatted_sig;
+                    BR_addr        <= BR_Adder_sig;
                 when "1000010" => -- BRR.Z
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -274,11 +274,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "01";
-                    B_operand1     <= PC_dec_sig;
-                    B_operand2     <= disp1formatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En          <= '1';
+                    BR_Op          <= "01";
+                    BR_operand1    <= PC_dec_sig;
+                    BR_operand2    <= disp1formatted_sig;
+                    BR_addr        <= BR_Adder_sig;
                 when "1000011" => -- BR
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -287,11 +287,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "00";
-                    B_operand1     <= RA_data_sig_FW;
-                    B_operand2     <= dispsformatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En          <= '1';
+                    BR_Op          <= "00";
+                    BR_operand1    <= RA_data_sig_FW;
+                    BR_operand2    <= dispsformatted_sig;
+                    BR_addr        <= BR_Adder_sig;
                 when "1000100" => -- BR.N
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -300,11 +300,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "10";
-                    B_operand1     <= RA_data_sig_FW;
-                    B_operand2     <= dispsformatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En           <= '1';
+                    BR_Op           <= "10";
+                    BR_operand1     <= RA_data_sig_FW;
+                    BR_operand2     <= dispsformatted_sig;
+                    BR_addr         <= BR_Adder_sig;
                 when "1000101" => -- BR.Z
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -313,11 +313,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "01";
-                    B_operand1     <= RA_data_sig_FW;
-                    B_operand2     <= dispsformatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En           <= '1';
+                    BR_Op           <= "01";
+                    BR_operand1     <= RA_data_sig_FW;
+                    BR_operand2     <= dispsformatted_sig;
+                    BR_addr         <= BR_Adder_sig;
                 when "1000110" => -- BR.SUB
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -326,11 +326,11 @@ begin
                     RW_addr        <= "111";
                     RW_En          <= '1';
                     In_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "11";
-                    B_operand1     <= RA_data_sig_FW;
-                    B_operand2     <= dispsformatted_sig;
-                    B_addr         <= B_adder_sig;
+                    BR_En           <= '1';
+                    BR_Op           <= "11";
+                    BR_operand1     <= RA_data_sig_FW;
+                    BR_operand2     <= dispsformatted_sig;
+                    BR_addr         <= BR_Adder_sig;
                 when "1000111" => --RETURN
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -339,11 +339,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '1';
-                    B_Op           <= "00";
-                    B_operand1     <= (others=>'0');
-                    B_operand2     <= (others=>'0');
-                    B_addr         <= RA_data_sig_FW;
+                    BR_En           <= '1';
+                    BR_Op           <= "00";
+                    BR_operand1     <= (others=>'0');
+                    BR_operand2     <= (others=>'0');
+                    BR_addr         <= RA_data_sig_FW;
                 when others =>
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -352,11 +352,11 @@ begin
                     RW_addr        <= (others => '0');
                     RW_En          <= '0';
                     In_En          <= '0';
-                    B_En           <= '0';
-                    B_Op           <= "00";
-                    B_operand1     <= (others=>'0');
-                    B_operand2     <= (others=>'0');
-                    B_addr         <= (others=>'0');           
+                    BR_En           <= '0';
+                    BR_Op           <= "00";
+                    BR_operand1     <= (others=>'0');
+                    BR_operand2     <= (others=>'0');
+                    BR_addr         <= (others=>'0');           
                 end case;
         end if;                           
     end process decode_process;
