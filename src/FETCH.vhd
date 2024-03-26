@@ -7,9 +7,9 @@ entity FETCH is
         PC_reset        : in std_logic;                         -- Resets PC to [val?]
         Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
         Br_CTRL         : in std_logic;                         -- input signal for PC MUX
-        IF_IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for Format A Test
+        IF_IR_in        : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for Format A Test
         IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
-        PC_out          : out std_logic_vector(15 downto 0)    -- PC for decoder
+        PC_out          : out std_logic_vector(15 downto 0)     -- PC for decoder
     );
 end FETCH;
 
