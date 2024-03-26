@@ -1,5 +1,7 @@
 liBRary ieee;
 use ieee.std_logic_1164.all;
+Library xpm;
+use xpm.vcomponents.all;
 
 entity CONTROL is 
     port(
@@ -88,7 +90,7 @@ architecture behavioral of CONTROL is
             IN_En          : in std_logic
      );
     end component;
-   component WRITEBACK is
+    component WRITEBACK is
         port (
             WB_Reset       : in std_logic;
             W_data      : in std_logic_vector (15 downto 0);
@@ -98,14 +100,52 @@ architecture behavioral of CONTROL is
             WB_addr     : out std_logic_vector (2 downto 0);
             WB_En       : out std_logic  
         );
-    end component;
+     end component;
+     
+     
+     component XPM_MEMORY_DPDISTRAM is
+        port (
+             addra       : in std_logic_vector (15 downto 0);
+             addrb       : in std_logic_vector (15 downto 0);
+             clka        : in std_logic;
+             clkb        : in std_logic;
+             dina        : in std_logic_vector (15 downto 0);
+             douta       : out std_logic_vector (15 downto 0);
+             doutb       : out std_logic_vector (15 downto 0);
+             ena         : in std_logic;
+             enb         : in std_logic;
+             regcea      : in std_logic;
+             regceb      : in std_logic;
+             rsta        : in std_logic;
+             rstb        : in std_logic;
+             wea         : in std_logic_vector (15 downto 0)
+         );
+     end component;
     
         -- Basic Signals
         signal Reset                 : std_logic;
         signal PC_Reset              : std_logic;   
         signal Input_sig             : std_logic_vector (15 downto 0);
         signal Output_sig            : std_logic_vector (15 downto 0);
-        signal Instruction_in_sig    : std_logic_vector (15 downto 0);        
+        signal Instruction_in_sig    : std_logic_vector (15 downto 0);
+        
+        -- ROM
+        signal ROM_addra             : std_logic_vector (15 downto 0);
+        signal ROM_douta            : std_logic_vector (15 downto 0);
+        signal ROM_ena               : std_logic;
+        signal ROM_rsta              : std_logic;
+        
+        -- RAM
+        signal RAM_addra             : std_logic_vector (15 downto 0);
+        signal RAM_addrb             : std_logic_vector (15 downto 0);
+        signal RAM_dina              : std_logic_vector (15 downto 0);
+        signal RAM_douta             : std_logic_vector (15 downto 0);
+        signal RAM_doutb             : std_logic_vector (15 downto 0);
+        signal RAM_ena               : std_logic;
+        signal RAM_enb               : std_logic;
+        signal RAM_rsta              : std_logic;
+        signal RAM_rstb              : std_logic;
+        signal RAM_wea               : std_logic_vector (15 downto 0);
         
         -- IF/ID
         signal IF_ID_IR_In           : std_logic_vector (15 downto 0);
@@ -188,7 +228,90 @@ architecture behavioral of CONTROL is
         
 begin
 
-           FetchStage : FETCH port map (
+
+    -- xpm_memory_sprom: Single Port ROM
+    -- Xilinx Parameterized Macro, version 2018.3
+    xpm_memory_sprom_inst : xpm_memory_sprom
+        generic map (
+            -- Common module generics
+            MEMORY_SIZE             => 16384,           --positive integer
+            MEMORY_PRIMITIVE        => "auto",          --string; "auto", "distributed", or "block";
+            MEMORY_INIT_FILE        => "none",          --string; "none" or "<filename>.mem" 
+            MEMORY_INIT_PARAM       => "",              --string;
+            USE_MEM_INIT            => 1,               --integer; 0,1
+            WAKEUP_TIME             => "disable_sleep", --string; "disable_sleep" or "use_sleep_pin" 
+            MESSAGE_CONTROL         => 0,               --integer; 0,1
+            ECC_MODE                => "no_ecc",        --string; "no_ecc", "encode_only", "decode_only" or "both_encode_and_decode" 
+            AUTO_SLEEP_TIME         => 0,               --Do not Change
+            MEMORY_OPTIMIZATION     => "true",          --string; "true", "false" 
+            
+            -- Port A module generics
+            READ_DATA_WIDTH_A       => 16,              --positive integer
+            ADDR_WIDTH_A            => 11,               --positive integer
+            READ_RESET_VALUE_A      => "0",             --string
+            READ_LATENCY_A          => 0                --non-negative integer
+        )
+        
+    port map (
+                addra           => ROM_addra,
+                clka            => clk,
+                --dbiterra        => ,
+                douta           => ROM_douta,
+                ena             => ROM_ena,
+                injectdbiterra  => '0',
+                injectsbiterra  => '0',
+                regcea          => '1',
+                rsta            => ROM_rsta,
+                --sbiterra        => ,
+                sleep           => '0'
+    );
+    -- End of xpm_memory_sprom_inst instantiation
+    
+    xpm_memory_dpdistram_inst : xpm_memory_dpdistram
+        generic map (
+             -- Common module generics
+            MEMORY_SIZE             => 16384,          --positive integer
+            CLOCKING_MODE           => "common_clock", --string; "common_clock", "independent_clock" 
+            MEMORY_INIT_FILE        => "format-A-test",--string; "none" or "<filename>.mem" 
+            MEMORY_INIT_PARAM       => "",             --string;
+            USE_MEM_INIT            => 1,              --integer; 0,1
+            MESSAGE_CONTROL         => 0,              --integer; 0,1
+            USE_EMBEDDED_CONSTRAINT => 0,              --integer: 0,1
+            MEMORY_OPTIMIZATION     => "true",         --string; "true", "false" 
+        
+            -- Port A module generics
+            WRITE_DATA_WIDTH_A      => 16,             --positive integer
+            READ_DATA_WIDTH_A       => 16,             --positive integer
+            BYTE_WRITE_WIDTH_A      => 16,             --integer; 8, 9, or WRITE_DATA_WIDTH_A value
+            ADDR_WIDTH_A            => 11,              --positive integer
+            READ_RESET_VALUE_A      => "0",            --string
+            READ_LATENCY_A          => 0,              --non-negative integer
+        
+            -- Port B module generics
+            READ_DATA_WIDTH_B       => 16,             --positive integer
+            ADDR_WIDTH_B            => 6,              --positive integer
+            READ_RESET_VALUE_B      => "0",            --string
+            READ_LATENCY_B          => 0               --non-negative integer
+        )
+        port map (
+            addra       => RAM_addra,
+            addrb       => RAM_addrb,
+            clka        => clk,
+            clkb        => clk,
+            dina        => RAM_dina,
+            douta       => RAM_douta,
+            doutb       => RAM_doutb,
+            ena         => RAM_ena,
+            enb         => RAM_enb,
+            regcea      => '1',
+            regceb      => '1',
+            rsta        => RAM_rsta,
+            rstb        => RAM_rstb,
+            wea         => RAM_wea
+        );
+        -- End of xpm_memory_dpdistram_inst instantiation        
+        
+        FetchStage : FETCH port map (
             IF_Reset    => Reset,
             PC_reset    => Reset_button,
             BR_addr     => EX_MEM_BR_addr_In,
