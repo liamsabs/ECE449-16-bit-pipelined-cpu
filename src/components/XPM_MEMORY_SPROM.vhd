@@ -3,36 +3,20 @@ use ieee.std_logic_1164.all;
 Library xpm;
 use xpm.vcomponents.all;
 
-entity XPM_MEMORY_SPROM is
-    port(
-        addra           : in std_logic_vector(15 downto 0);
-        clka            : in std_logic;
-        dbiterra        : out std_logic;
-        douta           : out std_logic_vector(15 downto 0);
-        ena             : in std_logic;
-        injectdbiterra  : in std_logic;
-        injectsbiterra  : in std_logic;
-        regcea          : in std_logic;
-        rsta            : in std_logic;
-        sbiterra        : out std_logic;
-        sleep           : in std_logic;
-    );
-end XPM_MEMORY_SPROM;
-
 -- xpm_memory_sprom: Single Port ROM
 -- Xilinx Parameterized Macro, version 2018.3
 xpm_memory_sprom_inst : xpm_memory_sprom
 generic map (
-    ADDR_WIDTH_A => 6,              -- DECIMAL
+    ADDR_WIDTH_A => 8,              -- DECIMAL
     AUTO_SLEEP_TIME => 0,           -- DECIMAL
     ECC_MODE => "no_ecc",           -- String
     MEMORY_INIT_FILE => "none",     -- String
     MEMORY_INIT_PARAM => "0",       -- String
     MEMORY_OPTIMIZATION => "true",  -- String
     MEMORY_PRIMITIVE => "auto",     -- String
-    MEMORY_SIZE => 2048,            -- DECIMAL
+    MEMORY_SIZE => 128,            -- DECIMAL
     MESSAGE_CONTROL => 0,           -- DECIMAL
-    READ_DATA_WIDTH_A => 32,        -- DECIMAL
+    READ_DATA_WIDTH_A => 16,        -- DECIMAL
     READ_LATENCY_A => 2,            -- DECIMAL
     READ_RESET_VALUE_A => "0",      -- String
     RST_MODE_A => "SYNC",           -- String
@@ -56,3 +40,19 @@ port map (
     sleep => sleep -- 1-bit input: sleep signal to enable the dynamic power saving feature.
 );
 -- End of xpm_memory_sprom_inst instantiation
+
+entity XPM_MEMORY_SPROM is
+    port(
+        addra           : in std_logic_vector(15 downto 0);
+        clka            : in std_logic;
+        dbiterra        : out std_logic;
+        douta           : out std_logic_vector(15 downto 0);
+        ena             : in std_logic;
+        injectdbiterra  : in std_logic;
+        injectsbiterra  : in std_logic;
+        regcea          : in std_logic;
+        rsta            : in std_logic;
+        sbiterra        : out std_logic;
+        sleep           : in std_logic
+    );
+end XPM_MEMORY_SPROM;
