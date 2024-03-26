@@ -4,7 +4,7 @@ use ieee.std_logic_1164.all;
 entity DECODE is
     port (
         Clk            : in std_logic; -- Clock Input
-        Reset          : in std_logic; -- Reset
+        ID_Reset          : in std_logic; -- Reset
         ID_IR_in       : in std_logic_vector (15 downto 0); -- Instruction to Decode
         -- WriteBack
         WB_data        : in std_logic_vector (15 downto 0); -- Write Back data
