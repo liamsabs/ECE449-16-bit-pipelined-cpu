@@ -20,37 +20,35 @@ entity RAM is
 end RAM;
 
 
-architecture behavioural of RAM is
-
+architecture behavioral of RAM is
 begin
     -- xpm_memory_dpdistram: Dual Port Distributed RAM
     -- Xilinx Parameterized Macro, version 2018.3
     xpm_memory_dpdistram_inst : xpm_memory_dpdistram
     generic map (
-    MEMORY_SIZE             => 8192, -- 1024 bytes block
-    CLOCKING_MODE           => "common_clock", -- DEFAULT VALUE
-    MEMORY_INIT_FILE        => "none", -- DEFAULT VALUE
-    MEMORY_INIT_PARAM       => "", -- DEFAULT VALUE
-    USE_MEM_INIT            => 1,              --integer; 0,1
-    MESSAGE_CONTROL         => 0,              --integer; 0,1
-    USE_EMBEDDED_CONSTRAINT => 0,              --integer: 0,1
-    MEMORY_OPTIMIZATION     => "true",          --string; "true", "false" 
-
-    -- Port A module generics
-    WRITE_DATA_WIDTH_A      => 16,             -- 16-bit data
-    READ_DATA_WIDTH_A       => 16,             -- 16-bit data
-    BYTE_WRITE_WIDTH_A      => 16,             -- 16-bit data
-    ADDR_WIDTH_A            => 16,             -- 16-bit addressing
-    READ_RESET_VALUE_A      => "0",            --string
-    READ_LATENCY_A          => 1,              --non-negative integer
-
-    -- Port B module generics
-    READ_DATA_WIDTH_B       => 16,             --positive integer
-    ADDR_WIDTH_B            => 16,              --positive integer
-    READ_RESET_VALUE_B      => "0",            --string
-    READ_LATENCY_B          => 1               --non-negative integer
+        MEMORY_SIZE             => 8192, -- 1024 bytes block
+        CLOCKING_MODE           => "common_clock", -- DEFAULT VALUE
+        MEMORY_INIT_FILE        => "none", -- DEFAULT VALUE
+        MEMORY_INIT_PARAM       => "", -- DEFAULT VALUE
+        USE_MEM_INIT            => 1,              --integer; 0,1
+        MESSAGE_CONTROL         => 0,              --integer; 0,1
+        USE_EMBEDDED_CONSTRAINT => 0,              --integer: 0,1
+        MEMORY_OPTIMIZATION     => "true",          --string; "true", "false" 
+    
+        -- Port A module generics
+        WRITE_DATA_WIDTH_A      => 16,             -- 16-bit data
+        READ_DATA_WIDTH_A       => 16,             -- 16-bit data
+        BYTE_WRITE_WIDTH_A      => 16,             -- 16-bit data
+        ADDR_WIDTH_A            => 16,             -- 16-bit addressing
+        READ_RESET_VALUE_A      => "0",            --string
+        READ_LATENCY_A          => 1,              --non-negative integer
+    
+        -- Port B module generics
+        READ_DATA_WIDTH_B       => 16,             --positive integer
+        ADDR_WIDTH_B            => 16,              --positive integer
+        READ_RESET_VALUE_B      => "0",            --string
+        READ_LATENCY_B          => 1               --non-negative integer
     )
-
     port map (
         addra          => addr_A,
         addrb          => addr_B,
@@ -67,5 +65,5 @@ begin
         rstb           => Reset,
         wea            => W_En_A
     );
-end behavioural;
+end behavioral;
 
