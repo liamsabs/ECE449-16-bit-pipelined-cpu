@@ -1,5 +1,6 @@
-liBRary ieee;
+library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 Library xpm;
 use xpm.vcomponents.all;
 
@@ -15,17 +16,50 @@ entity CONTROL is
 end CONTROL;
 
 architecture behavioral of CONTROL is
-    component FETCH is
-        port (
-            IF_Reset        : in std_logic;
-            PC_reset        : in std_logic;                         -- Resets PC to [val?]
-            BR_addr         : in std_logic_vector(15 downto 0);     -- branch address
-            BR_CTRL         : in std_logic;                         -- input signal for PC MUX
-            IF_IR_in        : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for Format A Test
-            IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
-            PC_out          : out std_logic_vector(15 downto 0)    -- PC for decoder
+    -- ROM Component
+    component ROM is
+        port(
+            Reset     : in std_logic;  
+            Clk       : in std_logic;
+            -- Memory Interface Signals       
+            addr_A    : in std_logic_vector (15 downto 0);
+            Dout_A    : out std_logic_vector (15 downto 0)
         );
     end component;
+    -- RAM Component
+    component RAM is
+        port(
+            Reset     : in std_logic;  
+            Clk       : in std_logic;
+            -- Port A       
+            addr_A    : in std_logic_vector(15 downto 0);
+            Dout_A    : out std_logic_vector(15 downto 0);
+            Din_A     : in std_logic_vector(15 downto 0);
+            W_En_A    : in std_logic_vector(0 downto 0); 
+            -- Port B     
+            addr_B    : in std_logic_vector(15 downto 0);
+            Dout_B    : out std_logic_vector(15 downto 0)
+        );
+    end component;
+    -- FETCH Component
+    component FETCH is
+        port(
+            Clk             : in std_logic;
+            Reset_Ex        : in std_logic;
+            Reset_Load      : in std_logic;                         -- Resets PC to [val?]
+            Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
+            Br_CTRL         : in std_logic;                         -- input signal for PC MUX
+            Test_En         : in std_logic;                         -- used when we are testing in the Testbench [TO BE REMOVED]
+            IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
+            IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
+            PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
+            NPC_out         : out std_logic_vector (15 downto 0);
+            IR_ROM          : in std_logic_vector (15 downto 0);
+            IR_RAM          : in std_logic_vector (15 downto 0)
+            
+        );
+    end component;
+    -- Decode Component
     component DECODE is
         port (
             Clk            : in std_logic; -- Clock Input
@@ -61,6 +95,7 @@ architecture behavioral of CONTROL is
             FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
         );
     end component;
+    -- Decode Component
     component EXECUTE is
         port (
             -- ALU Args
@@ -90,6 +125,7 @@ architecture behavioral of CONTROL is
             IN_En          : in std_logic
      );
     end component;
+    -- Decode Component
     component WRITEBACK is
         port (
             WB_Reset       : in std_logic;
@@ -102,38 +138,19 @@ architecture behavioral of CONTROL is
         );
      end component;
      
-     
-     component XPM_MEMORY_DPDISTRAM is
-        port (
-             addra       : in std_logic_vector (15 downto 0);
-             addrb       : in std_logic_vector (15 downto 0);
-             clka        : in std_logic;
-             clkb        : in std_logic;
-             dina        : in std_logic_vector (15 downto 0);
-             douta       : out std_logic_vector (15 downto 0);
-             doutb       : out std_logic_vector (15 downto 0);
-             ena         : in std_logic;
-             enb         : in std_logic;
-             regcea      : in std_logic;
-             regceb      : in std_logic;
-             rsta        : in std_logic;
-             rstb        : in std_logic;
-             wea         : in std_logic_vector (15 downto 0)
-         );
-     end component;
-    
         -- Basic Signals
         signal Reset                 : std_logic;
-        signal PC_Reset              : std_logic;   
+        signal Reset_Ex              : std_logic;
+        signal Reset_Load            : std_logic;   
         signal Input_sig             : std_logic_vector (15 downto 0);
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
+        signal Test_En               : std_logic; -- used for testing device
+        signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         
         -- ROM
         signal ROM_addra             : std_logic_vector (15 downto 0);
         signal ROM_douta            : std_logic_vector (15 downto 0);
-        signal ROM_ena               : std_logic;
-        signal ROM_rsta              : std_logic;
         
         -- RAM
         signal RAM_addra             : std_logic_vector (15 downto 0);
@@ -141,11 +158,7 @@ architecture behavioral of CONTROL is
         signal RAM_dina              : std_logic_vector (15 downto 0);
         signal RAM_douta             : std_logic_vector (15 downto 0);
         signal RAM_doutb             : std_logic_vector (15 downto 0);
-        signal RAM_ena               : std_logic;
-        signal RAM_enb               : std_logic;
-        signal RAM_rsta              : std_logic;
-        signal RAM_rstb              : std_logic;
-        signal RAM_wea               : std_logic_vector (15 downto 0);
+        signal RAM_wea               : std_logic_vector (0 downto 0);
         
         -- IF/ID
         signal IF_ID_IR_In           : std_logic_vector (15 downto 0);
@@ -227,160 +240,99 @@ architecture behavioral of CONTROL is
         signal EX_IF_BR_CTRL    : std_logic;
         
 begin
-
-
-    -- xpm_memory_sprom: Single Port ROM
-    -- Xilinx Parameterized Macro, version 2018.3
-    xpm_memory_sprom_inst : xpm_memory_sprom
-        generic map (
-            -- Common module generics
-            MEMORY_SIZE             => 16384,           --positive integer
-            MEMORY_PRIMITIVE        => "auto",          --string; "auto", "distributed", or "block";
-            MEMORY_INIT_FILE        => "none",          --string; "none" or "<filename>.mem" 
-            MEMORY_INIT_PARAM       => "",              --string;
-            USE_MEM_INIT            => 1,               --integer; 0,1
-            WAKEUP_TIME             => "disable_sleep", --string; "disable_sleep" or "use_sleep_pin" 
-            MESSAGE_CONTROL         => 0,               --integer; 0,1
-            ECC_MODE                => "no_ecc",        --string; "no_ecc", "encode_only", "decode_only" or "both_encode_and_decode" 
-            AUTO_SLEEP_TIME         => 0,               --Do not Change
-            MEMORY_OPTIMIZATION     => "true",          --string; "true", "false" 
-            
-            -- Port A module generics
-            READ_DATA_WIDTH_A       => 16,              --positive integer
-            ADDR_WIDTH_A            => 11,               --positive integer
-            READ_RESET_VALUE_A      => "0",             --string
-            READ_LATENCY_A          => 0                --non-negative integer
-        )
-        
-    port map (
-                addra           => ROM_addra,
-                clka            => clk,
-                --dbiterra        => ,
-                douta           => ROM_douta,
-                ena             => ROM_ena,
-                injectdbiterra  => '0',
-                injectsbiterra  => '0',
-                regcea          => '1',
-                rsta            => ROM_rsta,
-                --sbiterra        => ,
-                sleep           => '0'
+    ROM_inst   : ROM port map (
+        Reset    => Reset,      
+        Clk      => Clk,           
+        addr_A   => ROM_addra,
+        Dout_A   => ROM_douta    
     );
-    -- End of xpm_memory_sprom_inst instantiation
     
-    xpm_memory_dpdistram_inst : xpm_memory_dpdistram
-        generic map (
-             -- Common module generics
-            MEMORY_SIZE             => 16384,          --positive integer
-            CLOCKING_MODE           => "common_clock", --string; "common_clock", "independent_clock" 
-            MEMORY_INIT_FILE        => "format-A-test",--string; "none" or "<filename>.mem" 
-            MEMORY_INIT_PARAM       => "",             --string;
-            USE_MEM_INIT            => 1,              --integer; 0,1
-            MESSAGE_CONTROL         => 0,              --integer; 0,1
-            USE_EMBEDDED_CONSTRAINT => 0,              --integer: 0,1
-            MEMORY_OPTIMIZATION     => "true",         --string; "true", "false" 
-        
-            -- Port A module generics
-            WRITE_DATA_WIDTH_A      => 16,             --positive integer
-            READ_DATA_WIDTH_A       => 16,             --positive integer
-            BYTE_WRITE_WIDTH_A      => 16,             --integer; 8, 9, or WRITE_DATA_WIDTH_A value
-            ADDR_WIDTH_A            => 11,              --positive integer
-            READ_RESET_VALUE_A      => "0",            --string
-            READ_LATENCY_A          => 0,              --non-negative integer
-        
-            -- Port B module generics
-            READ_DATA_WIDTH_B       => 16,             --positive integer
-            ADDR_WIDTH_B            => 6,              --positive integer
-            READ_RESET_VALUE_B      => "0",            --string
-            READ_LATENCY_B          => 0               --non-negative integer
-        )
-        port map (
-            addra       => RAM_addra,
-            addrb       => RAM_addrb,
-            clka        => clk,
-            clkb        => clk,
-            dina        => RAM_dina,
-            douta       => RAM_douta,
-            doutb       => RAM_doutb,
-            ena         => RAM_ena,
-            enb         => RAM_enb,
-            regcea      => '1',
-            regceb      => '1',
-            rsta        => RAM_rsta,
-            rstb        => RAM_rstb,
-            wea         => RAM_wea
-        );
-        -- End of xpm_memory_dpdistram_inst instantiation        
-        
-        FetchStage : FETCH port map (
-            IF_Reset    => Reset,
-            PC_reset    => Reset_button,
-            BR_addr     => EX_MEM_BR_addr_In,
-            BR_CTRL     => EX_MEM_BR_CTRL_In,
-            IR_out      => IF_ID_IR_In,       
-            IF_IR_in    => Instruction_in_sig,
-            PC_out      => IF_ID_PC_In          
-        );
-        
-        Decoder : DECODE port map (
-            Clk       => Clk, 
-            ID_Reset  => Reset,     
-            ID_IR_in  => IF_ID_IR_In,
-            WB_data   => ID_WB_data,
-            WB_addr   => ID_WB_addr,
-            WB_En     => ID_WB_En,
-            ALU_op    => ID_EX_ALU_op_In,         
-            shiftAmt  => ID_EX_Shiftamt_In,       
-            RA_data   => ID_EX_RA_data_In,         
-            RB_data   => ID_EX_RB_data_In,         
-            RW_addr   => ID_EX_RW_addr_In,        
-            RW_En     => ID_EX_RW_En_In,
-            PC        => IF_ID_PC_Out,
-            BR_addr   => ID_EX_BR_addr_In,
-            BR_En     => ID_EX_BR_En_In,
-            BR_op     => ID_EX_BR_Op_In,
-            BR_sub_PC => ID_EX_BR_sub_PC_In,
-            IN_En     => ID_EX_IN_En_In,          
-            port_Out  => Output_sig,         
-            RA_addr   => ID_A_addr,
-            FW_A_data => FW_A_data,
-            FW_A_En   => FW_A_En,
-            RB_addr   => ID_B_addr,
-            FW_B_data => FW_B_data,
-            FW_B_En   => FW_B_En  
-        );
-        
-        ExecuteStage : EXECUTE port map (
-            ALU_op      => ID_EX_ALU_op_Out,     
-            shiftAmt    => ID_EX_Shiftamt_Out,    
-            RA_data     => ID_EX_RA_data_Out,   
-            RB_data     => ID_EX_RB_data_Out,
-            RW_addr_in  => ID_EX_RW_addr_Out,
-            RW_En_in    => ID_EX_RW_En_Out,
-            RW_addr_out => EX_MEM_RW_addr_In,
-            RW_En_out   => EX_MEM_RW_En_In,        
-            RW_data_out => EX_MEM_RW_data_In, 
-            Moverflow   => Moverflow_flag,
-            Z_flag      => Z_flag,          
-            N_flag      => N_flag,
-            BR_En       => ID_EX_BR_En_Out,
-            BR_op       => ID_EX_BR_Op_Out,
-            BR_CTRL     => EX_MEM_BR_CTRL_In,
-            BR_addr_in  => ID_EX_BR_addr_Out,
-            BR_addr_out => EX_MEM_BR_addr_In,
-            BR_sub_PC   => ID_EX_BR_sub_PC_Out,
-            IN_data     => Input_sig,      
-            IN_En       => ID_EX_IN_En_Out     
-        );
-        
-        WriteBackStage: WRITEBACK port map (
-            WB_Reset  => Reset,
-            W_data    => EX_MEM_RW_data_Out, 
-            W_addr    => EX_MEM_RW_addr_Out,         
-            W_En      => EX_MEM_RW_En_Out,            
-            WB_data   => ID_WB_data,   
-            WB_addr   => ID_WB_addr,  
-            WB_En     => ID_WB_En      
-        );
+    RAM_inst   : RAM port map (
+        Reset   => Reset,             
+        Clk     => Clk,         
+        addr_A  => RAM_addra,
+        Dout_A  => RAM_douta,   
+        Din_A   => RAM_dina,
+        W_En_A  => RAM_wea,
+        addr_B  => RAM_addrb,
+        Dout_B  => RAM_doutb
+    );     
+     
+    FetchStage : FETCH port map (
+        Clk        => Clk,             
+        Reset_Ex   => Reset_Ex,    
+        Reset_Load => Reset_Load,                          
+        BR_addr    => EX_MEM_BR_addr_In,   
+        BR_CTRL    => EX_MEM_BR_CTRL_In,        
+        Test_en    => Test_En,
+        IR_out     => IF_ID_IR_In,                   
+        IR_in      => Instruction_in_sig,          
+        PC_out     => PC_sig,         
+        NPC_out    => IF_ID_PC_In,         
+        IR_ROM     => RAM_doutb,          
+        IR_RAM     => ROM_douta      
+    );
+    
+    Decoder : DECODE port map (
+        Clk       => Clk, 
+        ID_Reset  => Reset,     
+        ID_IR_in  => IF_ID_IR_In,
+        WB_data   => ID_WB_data,
+        WB_addr   => ID_WB_addr,
+        WB_En     => ID_WB_En,
+        ALU_op    => ID_EX_ALU_op_In,         
+        shiftAmt  => ID_EX_Shiftamt_In,       
+        RA_data   => ID_EX_RA_data_In,         
+        RB_data   => ID_EX_RB_data_In,         
+        RW_addr   => ID_EX_RW_addr_In,        
+        RW_En     => ID_EX_RW_En_In,
+        PC        => IF_ID_PC_Out,
+        BR_addr   => ID_EX_BR_addr_In,
+        BR_En     => ID_EX_BR_En_In,
+        BR_op     => ID_EX_BR_Op_In,
+        BR_sub_PC => ID_EX_BR_sub_PC_In,
+        IN_En     => ID_EX_IN_En_In,          
+        port_Out  => Output_sig,         
+        RA_addr   => ID_A_addr,
+        FW_A_data => FW_A_data,
+        FW_A_En   => FW_A_En,
+        RB_addr   => ID_B_addr,
+        FW_B_data => FW_B_data,
+        FW_B_En   => FW_B_En  
+    );
+    
+    ExecuteStage : EXECUTE port map (
+        ALU_op      => ID_EX_ALU_op_Out,     
+        shiftAmt    => ID_EX_Shiftamt_Out,    
+        RA_data     => ID_EX_RA_data_Out,   
+        RB_data     => ID_EX_RB_data_Out,
+        RW_addr_in  => ID_EX_RW_addr_Out,
+        RW_En_in    => ID_EX_RW_En_Out,
+        RW_addr_out => EX_MEM_RW_addr_In,
+        RW_En_out   => EX_MEM_RW_En_In,        
+        RW_data_out => EX_MEM_RW_data_In, 
+        Moverflow   => Moverflow_flag,
+        Z_flag      => Z_flag,          
+        N_flag      => N_flag,
+        BR_En       => ID_EX_BR_En_Out,
+        BR_op       => ID_EX_BR_Op_Out,
+        BR_CTRL     => EX_MEM_BR_CTRL_In,
+        BR_addr_in  => ID_EX_BR_addr_Out,
+        BR_addr_out => EX_MEM_BR_addr_In,
+        BR_sub_PC   => ID_EX_BR_sub_PC_Out,
+        IN_data     => Input_sig,      
+        IN_En       => ID_EX_IN_En_Out     
+    );
+    
+    WriteBackStage: WRITEBACK port map (
+        WB_Reset  => Reset,
+        W_data    => EX_MEM_RW_data_Out, 
+        W_addr    => EX_MEM_RW_addr_Out,         
+        W_En      => EX_MEM_RW_En_Out,            
+        WB_data   => ID_WB_data,   
+        WB_addr   => ID_WB_addr,  
+        WB_En     => ID_WB_En      
+    );
         
         --Clk_sig <= Clk;
         Reset <= Rst;
