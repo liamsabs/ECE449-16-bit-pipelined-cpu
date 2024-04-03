@@ -138,8 +138,10 @@ architecture behavioral of CONTROL is
         port (
             WB_Reset    : in std_logic;
             W_data      : in std_logic_vector (15 downto 0);
+            MEM_data    : in std_logic_vector (15 downto 0);
             W_addr      : in std_logic_vector (2 downto 0);
             W_En        : in std_logic;
+            L_op        : in std_logic_vector (2 downto 0);
             WB_data     : out std_logic_vector (15 downto 0);
             WB_addr     : out std_logic_vector (2 downto 0);
             WB_En       : out std_logic  
@@ -225,8 +227,8 @@ architecture behavioral of CONTROL is
         signal EX_MEM_BR_addr_Out    : std_logic_vector (15 downto 0);
         signal EX_MEM_MEM_din_In     : std_logic_vector (15 downto 0); -- This is RB_data passed through the execute stage to be used as the data to write to memory
         signal EX_MEM_MEM_din_Out    : std_logic_vector (15 downto 0);
-        signal EX_MEM_L_op_In        : std_logic_vector (2 downto 0);
-        signal EX_MEM_L_op_Out       : std_logic_vector (2 downto 0);
+        signal EX_MEM_L_op_In        : std_logic_vector (15 downto 0);
+        signal EX_MEM_L_op_Out       : std_logic_vector (15 downto 0);
         
         -- MEM/WB
         signal MEM_WB_RW_data_In     : std_logic_vector (15 downto 0); -- this is data from execute stage
@@ -348,9 +350,11 @@ begin
     
     WriteBackStage: WRITEBACK port map (
         WB_Reset  => Reset,
-        W_data    => EX_MEM_RW_data_Out, 
-        W_addr    => EX_MEM_RW_addr_Out,         
-        W_En      => EX_MEM_RW_En_Out,            
+        W_data    => MEM_WB_RW_data_Out,
+        MEM_data  => MEM_WB_MEM_dout_Out, 
+        W_addr    => MEM_WB_RW_addr_Out,         
+        W_En      => MEM_WB_RW_En_Out,
+        L_op      => MEM_WB_L_op_Out,            
         WB_data   => ID_WB_data,   
         WB_addr   => ID_WB_addr,  
         WB_En     => ID_WB_En      
