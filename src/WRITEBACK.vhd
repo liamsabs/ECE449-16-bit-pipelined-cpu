@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 
 entity WRITEBACK is
     port (
-        Reset       : in std_logic;
+        WB_Reset    : in std_logic;
         W_data      : in std_logic_vector (15 downto 0);
         W_addr      : in std_logic_vector (2 downto 0);
         W_En        : in std_logic;
@@ -15,9 +15,9 @@ end WRITEBACK;
 
 architecture behavioral of WRITEBACK is
 begin
-    process (Reset, W_data, W_addr, W_En)
+    process (WB_Reset, W_data, W_addr, W_En)
     begin
-        if Reset = '1' then
+        if WB_Reset = '1' then
             WB_data <= (others => '0');
             WB_addr <= (others => '0');
             WB_En   <= '0';   
