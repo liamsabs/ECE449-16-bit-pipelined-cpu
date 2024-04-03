@@ -8,7 +8,7 @@ entity CONTROL is
     port(
         Clk             : in std_logic;
         Rst             : in std_logic;
-        IR_In_from_TB   : in std_logic_vector (15 downto 0);
+        --IR_In_from_TB   : in std_logic_vector (15 downto 0);
         --Data_In       : in std_logic_vector (15 downto 0);
         --Data_Out      : out std_logic_vector (15 downto 0);
         Reset_button   : in std_logic
@@ -362,9 +362,9 @@ begin
         
         --Clk_sig <= Clk;
         Reset <= Rst;
-        Instruction_in_sig <= IR_In_from_TB; 
+        --Instruction_in_sig <= IR_In_from_TB; 
    
-    FWD : process(Clk, Rst, IR_in_from_TB, EX_MEM_RW_data_In, ID_WB_data, ID_A_addr, ID_B_addr, EX_MEM_RW_addr_In, ID_WB_addr)
+    FWD : process(Clk, Rst, EX_MEM_RW_data_In, ID_WB_data, ID_A_addr, ID_B_addr, EX_MEM_RW_addr_In, ID_WB_addr)
     begin        
         -- Forwarding logic (A)
         if EX_MEM_RW_addr_In = ID_A_addr then
