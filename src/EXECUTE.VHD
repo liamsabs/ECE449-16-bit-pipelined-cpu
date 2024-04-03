@@ -85,7 +85,7 @@ architecture Behavioral of EXECUTE is
         RB_data_out <= RB_data;
                
         -- Setting Flags
-        process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result)
+        process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, Mem_op_in, Mem_imm)
         begin 
             case BR_en is
                 when '0' =>

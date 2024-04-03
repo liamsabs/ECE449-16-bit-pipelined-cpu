@@ -17,7 +17,7 @@ end WRITEBACK;
 
 architecture behavioral of WRITEBACK is
 begin
-    process (WB_Reset, W_data, W_addr, W_En)
+    process (WB_Reset, W_data, W_addr, W_En, L_op, Mem_data)
     begin
         if WB_Reset = '1' then
             WB_data <= (others => '0');
