@@ -9,8 +9,8 @@ entity CONTROL is
         Clk             : in std_logic;
         Rst             : in std_logic;
         IR_In_from_TB   : in std_logic_vector (15 downto 0);
-        --Data_In        : in std_logic_vector (15 downto 0);
-        --Data_Out       : out std_logic_vector (15 downto 0);
+        --Data_In       : in std_logic_vector (15 downto 0);
+        --Data_Out      : out std_logic_vector (15 downto 0);
         Reset_button   : in std_logic
     );
 end CONTROL;
@@ -44,18 +44,18 @@ architecture behavioral of CONTROL is
     -- FETCH Component
     component FETCH is
         port(
-            Clk             : in std_logic;
-            Reset_Ex        : in std_logic;
-            Reset_Load      : in std_logic;                         -- Resets PC to [val?]
-            Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
-            Br_CTRL         : in std_logic;                         -- input signal for PC MUX
-            Test_En         : in std_logic;                         -- used when we are testing in the Testbench [TO BE REMOVED]
-            IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
-            IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
-            PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
-            NPC_out         : out std_logic_vector (15 downto 0);
-            IR_ROM          : in std_logic_vector (15 downto 0);
-            IR_RAM          : in std_logic_vector (15 downto 0)
+            Clk            : in std_logic;
+            Reset_Ex       : in std_logic;
+            Reset_Load     : in std_logic;                         -- Resets PC to [val?]
+            Br_addr        : in std_logic_vector(15 downto 0);     -- Branch address
+            Br_CTRL        : in std_logic;                         -- input signal for PC MUX
+            Test_En        : in std_logic;                         -- used when we are testing in the Testbench [TO BE REMOVED]
+            IR_in          : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
+            IR_out         : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
+            PC_out         : out std_logic_vector(15 downto 0);     -- PC for decoder
+            NPC_out        : out std_logic_vector (15 downto 0);
+            IR_ROM         : in std_logic_vector (15 downto 0);
+            IR_RAM         : in std_logic_vector (15 downto 0)
             
         );
     end component;
@@ -93,6 +93,9 @@ architecture behavioral of CONTROL is
             RB_addr        : out std_logic_vector (2 downto 0); -- address of RB used for forwarding
             FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RB
             FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
+            -- Memory 
+            L_op           : out std_logic_vector (2 downto 0); -- '000' L NOOP,'001' for MOV, '01x' LoadImm LSB is m.1.,'100' LOAD, and '101' STORE
+            L_imm          : out std_logic_vector (7 downto 0); -- immediate used for Load Imm
         );
     end component;
     -- Decode Component
@@ -128,7 +131,7 @@ architecture behavioral of CONTROL is
     -- Decode Component
     component WRITEBACK is
         port (
-            WB_Reset       : in std_logic;
+            WB_Reset    : in std_logic;
             W_data      : in std_logic_vector (15 downto 0);
             W_addr      : in std_logic_vector (2 downto 0);
             W_En        : in std_logic;
@@ -150,7 +153,7 @@ architecture behavioral of CONTROL is
         
         -- ROM
         signal ROM_addra             : std_logic_vector (15 downto 0);
-        signal ROM_douta            : std_logic_vector (15 downto 0);
+        signal ROM_douta             : std_logic_vector (15 downto 0);
         
         -- RAM
         signal RAM_addra             : std_logic_vector (15 downto 0);
@@ -194,7 +197,10 @@ architecture behavioral of CONTROL is
         signal ID_EX_BR_addr_Out     : std_logic_vector (15 downto 0);
         signal ID_EX_BR_sub_PC_In    : std_logic_vector (15 downto 0);
         signal ID_EX_BR_sub_PC_Out   : std_logic_vector (15 downto 0);
-        -- TO DO add MEMORY parameters (address, enable) 
+        signal ID_EX_L_op_In         : std_logic_vector (2 downto 0); -- opcode for Load, used by Execute, memory, and writeback
+        signal ID_EX_L_op_Out        : std_logic_vector (2 downto 0);
+        signal ID_EX_L_imm_In        : std_logic_vector (7 downto 0); -- immediate value which will need processing in execute
+        signal ID_EX_L_imm_Out       : std_logic_vector (7 downto 0); 
 
         -- Execute Signals
         signal IN_data               : std_logic_vector (15 downto 0);
@@ -202,7 +208,7 @@ architecture behavioral of CONTROL is
         signal Moverflow_Flag        : std_logic;
     
         -- EX/MEM
-        signal EX_MEM_RW_data_In     : std_logic_vector (15 downto 0);
+        signal EX_MEM_RW_data_In     : std_logic_vector (15 downto 0); -- this is used for format A Register file stuff as well as the address line into memory
         signal EX_MEM_RW_data_Out    : std_logic_vector (15 downto 0);
         signal EX_MEM_RW_addr_In     : std_logic_vector (2 downto 0);
         signal EX_MEM_RW_addr_Out    : std_logic_vector (2 downto 0);
@@ -212,28 +218,35 @@ architecture behavioral of CONTROL is
         signal EX_MEM_BR_CTRL_Out    : std_logic;
         signal EX_MEM_BR_addr_In     : std_logic_vector (15 downto 0);
         signal EX_MEM_BR_addr_Out    : std_logic_vector (15 downto 0);
-        -- TO DO add MEMORY parameters (address, enable)
+        signal EX_MEM_MEM_din_In     : std_logic_vector (15 downto 0); -- This is RB_data passed through the execute stage to be used as the data to write to memory
+        signal EX_MEM_MEM_din_Out    : std_logic_vector (15 downto 0);
+        signal EX_MEM_L_op_In        : std_logic_vector (15 downto 0);
+        signal EX_MEM_L_op_Out       : std_logic_vector (15 downto 0);
         
         -- MEM/WB
-        signal MEM_WB_RW_data_In      : std_logic_vector (15 downto 0);
-        signal MEM_WB_RW_data_Out     : std_logic_vector (15 downto 0);
-        signal MEM_WB_RW_addr_In      : std_logic_vector (2 downto 0);
-        signal MEM_WB_RW_addr_Out     : std_logic_vector (2 downto 0);
-        signal MEM_WB_RW_En_In        : std_logic;
-        signal MEM_WB_RW_En_Out       : std_logic;
+        signal MEM_WB_RW_data_In     : std_logic_vector (15 downto 0); -- this is data from execute stage
+        signal MEM_WB_RW_data_Out    : std_logic_vector (15 downto 0);
+        signal MEM_WB_MEM_dout_In    : std_logic_vector (15 downto 0); -- this is data from memory stage
+        signal MEM_WB_MEM_dout_Out   : std_logic_vector (15 downto 0);
+        signal MEM_WB_RW_addr_In     : std_logic_vector (2 downto 0);
+        signal MEM_WB_RW_addr_Out    : std_logic_vector (2 downto 0);
+        signal MEM_WB_RW_En_In       : std_logic;
+        signal MEM_WB_RW_En_Out      : std_logic;
+        signal MEM_WB_L_op_In        : std_logic_vector (2 downto 0);
+        signal MEM_WB_L_op_Out       : std_logic_vector (2 downto 0);
         
         -- Forwarding
-        signal ID_A_addr        : std_logic_vector (2 downto 0);
-        signal FW_A_data        : std_logic_vector (15 downto 0);
-        signal FW_A_En          : std_logic;
-        signal ID_B_addr        : std_logic_vector (2 downto 0);
-        signal FW_B_data        : std_logic_vector (15 downto 0);
-        signal FW_B_En          : std_logic;
+        signal ID_A_addr             : std_logic_vector (2 downto 0);
+        signal FW_A_data             : std_logic_vector (15 downto 0);
+        signal FW_A_En               : std_logic;
+        signal ID_B_addr             : std_logic_vector (2 downto 0);
+        signal FW_B_data             : std_logic_vector (15 downto 0);
+        signal FW_B_En               : std_logic;
 
         -- Write-back
-        signal ID_WB_data       : std_logic_vector (15 downto 0);
-        signal ID_WB_addr       : std_logic_vector (2 downto 0);
-        signal ID_WB_En         : std_logic;
+        signal ID_WB_data            : std_logic_vector (15 downto 0);
+        signal ID_WB_addr            : std_logic_vector (2 downto 0);
+        signal ID_WB_En              : std_logic;
 
         -- Branching
         signal EX_IF_BR_addr    : std_logic_vector (15 downto 0);
