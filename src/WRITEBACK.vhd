@@ -5,8 +5,10 @@ entity WRITEBACK is
     port (
         WB_Reset    : in std_logic;
         W_data      : in std_logic_vector (15 downto 0);
+        MEM_data    : in std_logic_vector (15 downto 0);
         W_addr      : in std_logic_vector (2 downto 0);
         W_En        : in std_logic;
+        L_op        : in std_logic_vector (2 downto 0);
         WB_data     : out std_logic_vector (15 downto 0);
         WB_addr     : out std_logic_vector (2 downto 0);
         WB_En       : out std_logic  
@@ -21,6 +23,10 @@ begin
             WB_data <= (others => '0');
             WB_addr <= (others => '0');
             WB_En   <= '0';   
+        elsif L_op = "001" then
+            WB_data <= MEM_data;
+            WB_addr <= W_addr;
+            WB_En <= W_En;
         else
             WB_data <= W_data;
             WB_addr <= W_addr;

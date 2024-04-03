@@ -133,8 +133,10 @@ architecture behavioral of CONTROL is
         port (
             WB_Reset    : in std_logic;
             W_data      : in std_logic_vector (15 downto 0);
+            MEM_data    : in std_logic_vector (15 downto 0);
             W_addr      : in std_logic_vector (2 downto 0);
             W_En        : in std_logic;
+            L_op        : in std_logic_vector (2 downto 0);
             WB_data     : out std_logic_vector (15 downto 0);
             WB_addr     : out std_logic_vector (2 downto 0);
             WB_En       : out std_logic  
@@ -311,7 +313,9 @@ begin
         FW_A_En   => FW_A_En,
         RB_addr   => ID_B_addr,
         FW_B_data => FW_B_data,
-        FW_B_En   => FW_B_En  
+        FW_B_En   => FW_B_En,
+        L_op      => ID_EX_L_op_In,  
+        L_imm     => ID_EX_L_imm_In      
     );
     
     ExecuteStage : EXECUTE port map (
@@ -339,9 +343,11 @@ begin
     
     WriteBackStage: WRITEBACK port map (
         WB_Reset  => Reset,
-        W_data    => EX_MEM_RW_data_Out, 
-        W_addr    => EX_MEM_RW_addr_Out,         
-        W_En      => EX_MEM_RW_En_Out,            
+        W_data    => MEM_WB_RW_data_Out,
+        MEM_data  => MEM_WB_MEM_dout_Out,
+        W_addr    => MEM_WB_RW_addr_Out,         
+        W_En      => EX_MEM_RW_En_Out,
+        L_op      => MEM_WB_L_op_Out,            
         WB_data   => ID_WB_data,   
         WB_addr   => ID_WB_addr,  
         WB_En     => ID_WB_En      
@@ -368,6 +374,12 @@ begin
             FW_B_data <= ID_WB_data;
         end if;
     end process FWD; 
+    
+    MEM : process (EX_MEM_L_op_Out) -- to add Memory stage logic
+    
+    begin
+    
+    end process MEM;
     
     IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
     begin
