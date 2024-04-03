@@ -29,7 +29,12 @@ entity EXECUTE is
          BR_sub_PC      : in std_logic_vector(15 downto 0);
          -- I/O Handling
          IN_data        : in std_logic_vector (15 downto 0);
-         IN_En          : in std_logic
+         IN_En          : in std_logic;
+         -- Memory
+         Mem_op_in      : in std_logic_vector (2 downto 0);
+         Mem_op_out     : out std_logic_vector (2 downto 0);
+         Mem_imm        : in std_logic_vector (7 downto 0);
+         RB_data_out    : out std_logic_vector (15 downto 0)
 
      );
 end EXECUTE;
@@ -74,6 +79,10 @@ architecture Behavioral of EXECUTE is
         Moverflow <= Moverflow_sig;
         Z_flag    <= Z_sig;
         N_flag    <= N_sig;  
+        
+        -- Memory Signals
+        Mem_op_out <= Mem_op_in;
+        RB_data_out <= RB_data;
                
         -- Setting Flags
         process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result)
@@ -120,6 +129,7 @@ architecture Behavioral of EXECUTE is
                             end if;
                     end case;
             end case;
+            
             -- WB/Mem Data choice
             if BR_op = "11" then -- BR_SUB
                 RW_data_out <= BR_sub_PC;
@@ -128,5 +138,18 @@ architecture Behavioral of EXECUTE is
             else 
                 RW_data_out <= ALU_Result;
             end if;
+            
+            if Mem_op_in(2) = '1' then                  -- LOAD / STORE
+                RW_data_out <= RA_data;
+            elsif Mem_op_in(2 downto 1) = "01" then     -- LOAD IMM
+                if Mem_op_in(0) = '0' then
+                    RW_data_out <= RA_data & Mem_imm;
+                else
+                    RW_data_out <= Mem_imm & RA_data;
+                end if;
+            elsif Mem_op_in = "001" then
+                RW_data_out <= RA_data;                 -- MOV
+            end if;
+            
         end process;
 end Behavioral;
