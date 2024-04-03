@@ -101,37 +101,37 @@ architecture behavioral of CONTROL is
     -- Decode Component
     component EXECUTE is
         port (
-            -- ALU Args
-                 ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
-                 shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
-                 RA_data        : in std_logic_vector (15 downto 0);         -- Data for ALU A
-                 RB_data        : in std_logic_vector (15 downto 0);         -- Data for ALU B
-                 -- Register Write Data to propogate through
-                 RW_addr_in     : in std_logic_vector (2 downto 0);          -- IN Addr for WB stage
-                 RW_En_in       : in std_logic;                              -- EN for WB stage
-                 RW_addr_out    : out std_logic_vector (2 downto 0);         -- OUT Addr for WB stage
-                 RW_En_out      : out std_logic;                             -- OUT EN for WB stage
-                 RW_data_out    : out std_logic_vector (15 downto 0);        -- data to be written back
-                 -- Flags to be set
-                 Moverflow      : out std_logic; -- Multiplcation overflow flag output for controller
-                 Z_flag         : out std_logic; -- Zero flag used for testing
-                 N_flag         : out std_logic; -- Negative flag used for testing
-                 -- Branching inputs
-                 BR_En          : in std_logic;
-                 BR_op          : in std_logic_vector(1 downto 0);       
-                 BR_CTRL        : out std_logic;
-                 BR_addr_in     : in std_logic_vector(15 downto 0);
-                 BR_addr_out    : out std_logic_vector(15 downto 0);
-                 BR_sub_PC      : in std_logic_vector(15 downto 0);
-                 -- I/O Handling
-                 IN_data        : in std_logic_vector (15 downto 0);
-                 IN_En          : in std_logic;
-                 -- Memory
-                 Mem_op_in      : in std_logic_vector (2 downto 0);
-                 Mem_op_out     : out std_logic_vector (2 downto 0);
-                 Mem_imm        : in std_logic_vector (7 downto 0);
-                 RB_data_out    : out std_logic_vector (15 downto 0)
-     );
+             -- ALU Args
+             ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
+             shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
+             RA_data        : in std_logic_vector (15 downto 0);         -- Data for ALU A
+             RB_data        : in std_logic_vector (15 downto 0);         -- Data for ALU B
+             -- Register Write Data to propogate through
+             RW_addr_in     : in std_logic_vector (2 downto 0);          -- IN Addr for WB stage
+             RW_En_in       : in std_logic;                              -- EN for WB stage
+             RW_addr_out    : out std_logic_vector (2 downto 0);         -- OUT Addr for WB stage
+             RW_En_out      : out std_logic;                             -- OUT EN for WB stage
+             RW_data_out    : out std_logic_vector (15 downto 0);        -- data to be written back
+             -- Flags to be set
+             Moverflow      : out std_logic; -- Multiplcation overflow flag output for controller
+             Z_flag         : out std_logic; -- Zero flag used for testing
+             N_flag         : out std_logic; -- Negative flag used for testing
+             -- Branching inputs
+             BR_En          : in std_logic;
+             BR_op          : in std_logic_vector(1 downto 0);       
+             BR_CTRL        : out std_logic;
+             BR_addr_in     : in std_logic_vector(15 downto 0);
+             BR_addr_out    : out std_logic_vector(15 downto 0);
+             BR_sub_PC      : in std_logic_vector(15 downto 0);
+             -- I/O Handling
+             IN_data        : in std_logic_vector (15 downto 0);
+             IN_En          : in std_logic;
+             -- Memory
+             Mem_op_in      : in std_logic_vector (2 downto 0);
+             Mem_op_out     : out std_logic_vector (2 downto 0);
+             Mem_imm        : in std_logic_vector (7 downto 0);
+             RB_data_out    : out std_logic_vector (15 downto 0)
+         );
     end component;
     -- Decode Component
     component WRITEBACK is
@@ -381,6 +381,16 @@ begin
         end if;
         
     end process FWD; 
+    
+
+    MEM : process (EX_MEM_L_op_Out) -- to add Memory stage logic
+    begin
+        if EX_MEM_L_op_Out = "101" then
+            RAM_wea <= "1";
+        else 
+            RAM_wea <= "0";
+        end if;
+    end process MEM;
     
     IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
     begin
