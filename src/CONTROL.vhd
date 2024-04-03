@@ -53,7 +53,7 @@ architecture behavioral of CONTROL is
             IR_in          : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
             IR_out         : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
             PC_out         : out std_logic_vector(15 downto 0);     -- PC for decoder
-            NPC_out        : out std_logic_vector (15 downto 0);
+            --NPC_out        : out std_logic_vector (15 downto 0);
             IR_ROM         : in std_logic_vector (15 downto 0);
             IR_RAM         : in std_logic_vector (15 downto 0)
             
@@ -156,7 +156,7 @@ architecture behavioral of CONTROL is
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
         signal Test_En               : std_logic; -- used for testing device
-        signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
+        --signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         
         -- Tracking opcode and PC
         signal IF_OP_sig             : std_logic_vector (15 downto 0); -- tracking OPCODE for debugging
@@ -299,8 +299,8 @@ begin
         Test_en    => Test_En,
         IR_out     => IF_ID_IR_In,                   
         IR_in      => Instruction_in_sig,          
-        PC_out     => PC_sig,         
-        NPC_out    => IF_ID_PC_In,         
+        PC_out     => IF_ID_PC_In,         
+        --NPC_out    => IF_ID_PC_In,         
         IR_ROM     => RAM_doutb,          
         IR_RAM     => ROM_douta      
     );
@@ -378,7 +378,7 @@ begin
         
         -- Tracking opcode & PC
         IF_OP_sig <= IF_ID_IR_In;
-        IF_PC_sig <= PC_sig;
+        IF_PC_sig <= IF_ID_PC_In;
         
    
     FWD : process(Clk, Rst, EX_MEM_RW_data_In, ID_WB_data, ID_A_addr, ID_B_addr, EX_MEM_RW_addr_In, ID_WB_addr)
