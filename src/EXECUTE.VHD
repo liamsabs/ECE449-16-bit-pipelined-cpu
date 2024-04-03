@@ -143,9 +143,9 @@ architecture Behavioral of EXECUTE is
                 RW_data_out <= RA_data;
             elsif Mem_op_in(2 downto 1) = "01" then     -- LOAD IMM
                 if Mem_op_in(0) = '0' then
-                    RW_data_out <= RA_data & Mem_imm;
+                    RW_data_out <= RA_data(15 downto 8) & Mem_imm;
                 else
-                    RW_data_out <= Mem_imm & RA_data;
+                    RW_data_out <= Mem_imm & RA_data(7 downto 0);
                 end if;
             elsif Mem_op_in = "001" then
                 RW_data_out <= RA_data;                 -- MOV
