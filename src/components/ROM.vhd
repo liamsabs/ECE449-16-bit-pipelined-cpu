@@ -22,9 +22,9 @@ begin
     xpm_memory_sprom_inst : xpm_memory_sprom
     generic map (
         -- Common module generics
-        MEMORY_SIZE             => 8192,           --positive integer
+        MEMORY_SIZE             => 16384,           --positive integer
         MEMORY_PRIMITIVE        => "auto",          --string; "auto", "distributed", or "block";
-        MEMORY_INIT_FILE        => "bootloader",          --string; "none" or "<filename>.mem" 
+        MEMORY_INIT_FILE        => "bootloader.mem",          --string; "none" or "<filename>.mem" 
         MEMORY_INIT_PARAM       => "",              --string;
         USE_MEM_INIT            => 1,               --integer; 0,1
         WAKEUP_TIME             => "disable_sleep", --string; "disable_sleep" or "use_sleep_pin" 

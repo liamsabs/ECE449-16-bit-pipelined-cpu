@@ -225,8 +225,8 @@ architecture behavioral of CONTROL is
         signal EX_MEM_BR_addr_Out    : std_logic_vector (15 downto 0);
         signal EX_MEM_MEM_din_In     : std_logic_vector (15 downto 0); -- This is RB_data passed through the execute stage to be used as the data to write to memory
         signal EX_MEM_MEM_din_Out    : std_logic_vector (15 downto 0);
-        signal EX_MEM_L_op_In        : std_logic_vector (15 downto 0);
-        signal EX_MEM_L_op_Out       : std_logic_vector (15 downto 0);
+        signal EX_MEM_L_op_In        : std_logic_vector (2 downto 0);
+        signal EX_MEM_L_op_Out       : std_logic_vector (2 downto 0);
         
         -- MEM/WB
         signal MEM_WB_RW_data_In     : std_logic_vector (15 downto 0); -- this is data from execute stage

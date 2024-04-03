@@ -26,7 +26,7 @@ begin
     -- Xilinx Parameterized Macro, version 2018.3
     xpm_memory_dpdistram_inst : xpm_memory_dpdistram
     generic map (
-        MEMORY_SIZE             => 8192, -- 1024 bytes block
+        MEMORY_SIZE             => 16384, -- 1024 bytes block
         CLOCKING_MODE           => "common_clock", -- DEFAULT VALUE
         MEMORY_INIT_FILE        => "none", -- DEFAULT VALUE
         MEMORY_INIT_PARAM       => "", -- DEFAULT VALUE
