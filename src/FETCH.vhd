@@ -40,7 +40,7 @@ architecture behavioral of FETCH is
          IR_out <= IR_in;
         PC_Out <= PC (15 downto 1) & '0';
         
-        PC_process : process (Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, NPC, Br_addr, IR_sig)
+        PC_process : process (Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, NPC, Br_addr, IR_sig, clk)
             variable NPC_var : std_logic_vector(15 downto 0);
         begin
            
