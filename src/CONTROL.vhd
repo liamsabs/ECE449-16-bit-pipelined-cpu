@@ -92,10 +92,10 @@ architecture behavioral of CONTROL is
             FW_A_En        : in std_logic; -- input to be used to determine if forwarding RA
             RB_addr        : out std_logic_vector (2 downto 0); -- address of RB used for forwarding
             FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RB
-            FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
+            FW_B_En        : in std_logic; -- input to be used to determine if forwarding RB
             -- Memory 
             L_op           : out std_logic_vector (2 downto 0); -- '000' L NOOP,'001' for MOV, '01x' LoadImm LSB is m.1.,'100' LOAD, and '101' STORE
-            L_imm          : out std_logic_vector (7 downto 0); -- immediate used for Load Imm
+            L_imm          : out std_logic_vector (7 downto 0) -- immediate used for Load Imm
         );
     end component;
     -- Decode Component

@@ -33,10 +33,10 @@ entity DECODE is
         FW_A_En        : in std_logic; -- input to be used to determine if forwarding RA
         RB_addr        : out std_logic_vector (2 downto 0); -- address of RB used for forwarding
         FW_B_data      : in std_logic_vector (15 downto 0); -- input data from forwarding for RB
-        FW_B_En        : in std_logic -- input to be used to determine if forwarding RB
+        FW_B_En        : in std_logic; -- input to be used to determine if forwarding RB
         -- Memory 
         L_op           : out std_logic_vector (2 downto 0); -- '000' L NOOP,'001' for MOV, '01x' LoadImm LSB is m.1.,'100' LOAD, and '101' STORE
-        L_imm          : out std_logic_vector (7 downto 0); -- immediate used for Load Imm
+        L_imm          : out std_logic_vector (7 downto 0) -- immediate used for Load Imm
     );
 end DECODE;
 
@@ -164,8 +164,6 @@ begin
             BR_operand1    <= (others => '0');
             BR_operand2    <= (others => '0');
             BR_addr        <= (others => '0');
-            MEM_W_En       <= '0';       
-            MEM_WB_En      <= '0';
             L_op           <= (others => '0');       
         else
            case opcode is
@@ -393,7 +391,7 @@ begin
                     BR_operand1    <= (others=>'0');
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
-                    L_op           <= "101"
+                    L_op           <= "101";
                 when "0010010" => -- MOV
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -408,7 +406,7 @@ begin
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
                     L_op           <= "001";
-                when "0010010" => -- LOADIMM
+                when "0010011" => -- LOADIMM
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
                     RA_Addr_sig    <= "111";
