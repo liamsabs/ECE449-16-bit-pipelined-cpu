@@ -384,29 +384,45 @@ begin
     FWD : process(Clk, Rst, EX_MEM_RW_data_In, ID_WB_data, ID_A_addr, ID_B_addr, EX_MEM_RW_addr_In, ID_WB_addr)
     begin        
         -- Forwarding logic (A)
-        if EX_MEM_RW_addr_In = ID_A_addr then
+        if ID_EX_RW_addr_Out = ID_A_addr and ID_EX_RW_En_Out = '1'  then -- forward from Execute stage
             FW_A_En <= '1';
             FW_A_data <= EX_MEM_RW_data_In;
-        elsif ID_WB_addr = ID_A_addr then
+            
+        elsif EX_MEM_RW_addr_Out = ID_A_addr and EX_MEM_RW_En_Out = '1' then -- Forward from Memory stage
+            FW_A_En <= '1';
+            if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
+                FW_A_data <= MEM_WB_MEM_dout_In;
+            else
+                FW_A_data <= MEM_WB_RW_data_In;
+            end if;     
+        elsif ID_WB_addr = ID_A_addr and ID_WB_En = '1' then -- Forward from Writeback stage
             FW_A_En <= '1';
             FW_A_data <= ID_WB_data;
-        else
+        else -- otherwise don't forward
             FW_A_En <= '0';
             FW_A_data <= (others => '0');
-        end if;
+        end if; 
         
         -- Forwarding logic (B)
-        if EX_MEM_RW_addr_In = ID_B_addr then
+        if ID_EX_RW_addr_Out = ID_B_addr and ID_EX_RW_En_Out = '1'  then -- forward from Execute stage
             FW_B_En <= '1';
             FW_B_data <= EX_MEM_RW_data_In;
-        elsif ID_WB_addr = ID_B_addr then
+            
+        elsif EX_MEM_RW_addr_Out = ID_B_addr and EX_MEM_RW_En_Out = '1' then -- Forward from Memory stage
+            FW_B_En <= '1';
+            if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
+                FW_B_data <= MEM_WB_MEM_dout_In;
+            else
+                FW_B_data <= MEM_WB_RW_data_In;
+            end if;     
+        elsif ID_WB_addr = ID_B_addr and ID_WB_En = '1' then -- Forward from Writeback stage
             FW_B_En <= '1';
             FW_B_data <= ID_WB_data;
-        else
+        else -- otherwise don't forward
             FW_B_En <= '0';
             FW_B_data <= (others => '0');
-        end if;
-        
+        end if; 
+              
     end process FWD; 
     
     MEM : process (EX_MEM_L_op_Out, EX_MEM_RW_data_Out, EX_MEM_MEM_din_Out, EX_MEM_RW_data_Out, RAM_douta, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out) -- to add Memory stage logic
