@@ -53,7 +53,7 @@ architecture behavioral of CONTROL is
             IR_in          : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
             IR_out         : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
             PC_out         : out std_logic_vector(15 downto 0);     -- PC for decoder
-            --NPC_out        : out std_logic_vector (15 downto 0);
+            NPC_out        : out std_logic_vector (15 downto 0);
             IR_ROM         : in std_logic_vector (15 downto 0);
             IR_RAM         : in std_logic_vector (15 downto 0)
             
@@ -156,7 +156,7 @@ architecture behavioral of CONTROL is
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
         signal Test_En               : std_logic; -- used for testing device
-        --signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
+        signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         
         -- Tracking opcode and PC
         signal IF_OP_sig             : std_logic_vector (15 downto 0); -- tracking OPCODE for debugging
@@ -299,8 +299,8 @@ begin
         Test_en    => Test_En,
         IR_out     => IF_ID_IR_In,                   
         IR_in      => Instruction_in_sig,          
-        PC_out     => IF_ID_PC_In,         
-        --NPC_out    => IF_ID_PC_In,         
+        PC_out     => PC_sig,         
+        NPC_out    => IF_ID_PC_In,         
         IR_ROM     => RAM_doutb,          
         IR_RAM     => ROM_douta      
     );
@@ -361,12 +361,12 @@ begin
     );
     
     WriteBackStage: WRITEBACK port map (
-        WB_Reset  => Reset,
-        W_data    => EX_MEM_RW_data_Out, 
-        MEM_data  => MEM_WB_RW_data_Out,
-        W_addr    => EX_MEM_RW_addr_Out,         
-        W_En      => EX_MEM_RW_En_Out,  
-        L_op      => EX_MEM_L_op_Out,          
+        WB_Reset  => Reset,	        
+        W_data    => MEM_WB_RW_data_Out,
+        MEM_data  => MEM_WB_MEM_dout_Out, 
+        W_addr    => MEM_WB_RW_addr_Out,         
+        W_En      => MEM_WB_RW_En_Out,
+        L_op      => MEM_WB_L_op_Out,         
         WB_data   => ID_WB_data,   
         WB_addr   => ID_WB_addr,  
         WB_En     => ID_WB_En      
@@ -402,6 +402,15 @@ begin
         end if;
         
     end process FWD; 
+    
+    MEM : process (EX_MEM_L_op_Out) -- to add Memory stage logic
+        begin
+            if EX_MEM_L_op_Out = "101" then
+                RAM_wea <= "1";
+            else 
+                RAM_wea <= "0";
+            end if;
+        end process MEM;
     
     IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
     begin
