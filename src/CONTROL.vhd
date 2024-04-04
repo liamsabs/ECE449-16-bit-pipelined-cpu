@@ -294,8 +294,8 @@ begin
         Clk        => Clk,             
         Reset_Ex   => Reset_Ex,    
         Reset_Load => Reset_Load,                          
-        BR_addr    => EX_MEM_BR_addr_In,   
-        BR_CTRL    => EX_MEM_BR_CTRL_In,        
+        BR_addr    => EX_MEM_BR_addr_Out,   
+        BR_CTRL    => EX_MEM_BR_CTRL_Out,        
         Test_en    => Test_En,
         IR_out     => IF_ID_IR_In,                   
         IR_in      => Instruction_in_sig,          
@@ -308,7 +308,7 @@ begin
     Decoder : DECODE port map (
         Clk       => Clk, 
         ID_Reset  => Reset,     
-        ID_IR_in  => IF_ID_IR_In,
+        ID_IR_in  => IF_ID_IR_Out,
         WB_data   => ID_WB_data,
         WB_addr   => ID_WB_addr,
         WB_En     => ID_WB_En,
@@ -390,6 +390,9 @@ begin
         elsif ID_WB_addr = ID_A_addr then
             FW_A_En <= '1';
             FW_A_data <= ID_WB_data;
+        else
+            FW_A_En <= '0';
+            FW_A_data <= (others => '0');
         end if;
         
         -- Forwarding logic (B)
@@ -399,18 +402,34 @@ begin
         elsif ID_WB_addr = ID_B_addr then
             FW_B_En <= '1';
             FW_B_data <= ID_WB_data;
+        else
+            FW_B_En <= '0';
+            FW_B_data <= (others => '0');
         end if;
         
     end process FWD; 
     
-    MEM : process (EX_MEM_L_op_Out) -- to add Memory stage logic
-        begin
-            if EX_MEM_L_op_Out = "101" then
-                RAM_wea <= "1";
-            else 
-                RAM_wea <= "0";
-            end if;
-        end process MEM;
+    MEM : process (EX_MEM_L_op_Out, EX_MEM_RW_data_Out, EX_MEM_MEM_din_Out, EX_MEM_RW_data_Out, RAM_douta, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out) -- to add Memory stage logic
+    begin
+        -- determine if we can set write memory Enable
+        if EX_MEM_L_op_Out = "101" then
+            RAM_wea <= "1";
+        else 
+            RAM_wea <= "0";
+        end if;
+        
+        -- output of EX/MEM latch into the RAM inputs
+        RAM_addra <= EX_MEM_RW_data_Out (8 downto 0); -- RA from Execute stage being used as memory address
+        RAM_dina  <= EX_MEM_MEM_din_Out; -- RB data going to RAM
+        
+        -- Routing signals between the interstage latches
+        MEM_WB_RW_data_In  <= EX_MEM_RW_data_Out; -- data from Execute stage
+        MEM_WB_MEM_dout_In <= RAM_douta; -- data from RAM
+        MEM_WB_RW_addr_In  <= EX_MEM_RW_addr_Out; -- address for writeback
+        MEM_WB_RW_En_In    <= EX_MEM_RW_En_Out; -- enable for write back
+        MEM_WB_L_op_In     <= EX_MEM_L_op_Out;
+           
+    end process MEM;
     
     IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
     begin
@@ -497,67 +516,56 @@ begin
         end if;
     end process ID_EX;
 
-    EX_MEM : process (EX_MEM_RW_data_In, EX_MEM_RW_addr_In, EX_MEM_RW_En_In, 
-    EX_MEM_BR_CTRL_In, EX_MEM_BR_CTRL_In, EX_MEM_BR_addr_In, Clk, Reset)
+    EX_MEM : process (EX_MEM_RW_data_In, EX_MEM_RW_addr_In, EX_MEM_RW_En_In, EX_MEM_BR_CTRL_Out, EX_MEM_BR_addr_In, Clk, Reset)
     begin
-        if falling_edge(Clk) then
-            if EX_MEM_BR_CTRL_Out = '1' then
-                EX_MEM_RW_data_Out <= (others => '0');
-                EX_MEM_RW_addr_Out <= (others => '0');
-                EX_MEM_RW_En_Out <= '0';
-                EX_MEM_BR_CTRL_Out <= '0';
-                EX_MEM_BR_addr_Out <= (others => '0');
-            else
-                EX_MEM_RW_data_Out <= EX_MEM_RW_data_In;
-                EX_MEM_RW_addr_Out <= EX_MEM_RW_addr_In;
-                EX_MEM_RW_En_Out <= EX_MEM_RW_En_In;
-                EX_MEM_BR_CTRL_Out <= EX_MEM_BR_CTRL_In;
-                EX_MEM_BR_addr_Out <= EX_MEM_BR_addr_In;
-            end if;
-            
-            -- Tracking opcode & PC
-            MEM_OP_sig <= EX_OP_sig;
-            MEM_PC_sig <= EX_OP_sig;
-            
-        end if;
         if Reset = '1' then
             EX_MEM_RW_data_Out <= (others => '0');
             EX_MEM_RW_addr_Out <= (others => '0');
-            EX_MEM_RW_En_Out <= '0';
+            EX_MEM_RW_En_Out   <= '0';
             EX_MEM_BR_CTRL_Out <= '0';
-            EX_MEM_BR_addr_Out <= (others => '0');
-            
+            EX_MEM_BR_addr_Out <= (others => '0'); 
             -- Tracking opcode & PC
             MEM_OP_sig <= (others => '0');
             MEM_PC_sig <= (others => '0');
+        elsif falling_edge(Clk) then
+            if EX_MEM_BR_CTRL_Out = '1' then
+                EX_MEM_RW_data_Out <= (others => '0');
+                EX_MEM_RW_addr_Out <= (others => '0');
+                EX_MEM_RW_En_Out   <= '0';
+                EX_MEM_BR_CTRL_Out <= '0';
+                EX_MEM_BR_addr_Out <= (others => '0'); 
+                -- Tracking opcode & PC
+                MEM_OP_sig <= (others => '0');
+                MEM_PC_sig <= (others => '0');
+            else
+                EX_MEM_RW_data_Out <= EX_MEM_RW_data_In;
+                EX_MEM_RW_addr_Out <= EX_MEM_RW_addr_In;
+                EX_MEM_RW_En_Out   <= EX_MEM_RW_En_In;
+                EX_MEM_BR_CTRL_Out <= EX_MEM_BR_CTRL_In;
+                EX_MEM_BR_addr_Out <= EX_MEM_BR_addr_In;
+                -- Tracking opcode & PC
+                MEM_OP_sig <= EX_OP_sig;
+                MEM_PC_sig <= EX_OP_sig;
+            end if;
         end if;
     end process EX_MEM;
 
     MEM_WB : process (Clk, MEM_WB_RW_data_In, MEM_WB_RW_addr_In, MEM_WB_RW_En_In, Reset)
-    begin
-        MEM_WB_RW_data_Out <= MEM_WB_RW_data_In;
-        MEM_WB_RW_addr_Out <= MEM_WB_RW_addr_In;
-        MEM_WB_RW_En_Out <= MEM_WB_RW_En_In;
-        
-        if falling_edge(Clk) then
-            MEM_WB_RW_data_Out <= (others => '0');
-            MEM_WB_RW_addr_Out <= (others => '0');
-            MEM_WB_RW_En_Out <= '0';
-            
-            -- Tracking opcode & PC
-            WB_OP_sig <= MEM_OP_sig;
-            WB_PC_sig <= MEM_OP_sig;
-            
-        end if;
-
+    begin      
         if Reset = '1' then
             MEM_WB_RW_data_Out <= (others => '0');
             MEM_WB_RW_addr_Out <= (others => '0');
             MEM_WB_RW_En_Out <= '0';
-            
             -- Tracking opcode & PC
             WB_OP_sig <= (others => '0');
-            WB_PC_sig <= (others => '0');    
+            WB_PC_sig <= (others => '0'); 
+        elsif falling_edge(Clk) then
+            MEM_WB_RW_data_Out <= MEM_WB_RW_data_In;
+            MEM_WB_RW_addr_Out <= MEM_WB_RW_addr_In;
+            MEM_WB_RW_En_Out <= MEM_WB_RW_En_In;
+            -- Tracking opcode & PC
+            WB_OP_sig <= MEM_OP_sig;
+            WB_PC_sig <= MEM_OP_sig;      
         end if;
     end process MEM_WB;
         

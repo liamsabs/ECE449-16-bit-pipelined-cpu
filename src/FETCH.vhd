@@ -31,7 +31,6 @@ architecture behavioral of FETCH is
     end component;
 
     signal PC       : std_logic_vector (15 downto 0) := (others => '0');    -- program counter
-    signal NPC      : std_logic_vector (15 downto 0) := (others => '0');    -- new program counter
     signal IR_sig   : std_logic_vector (15 downto 0) := (others => '0');    -- instruction register
     signal adder_PC : std_logic_vector (15 downto 0) := (others => '0');    -- regular PC incremented with adder    
 
@@ -40,7 +39,7 @@ architecture behavioral of FETCH is
         IR_out <= IR_in;
         PC_Out <= PC (15 downto 1) & '0';
         
-        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, NPC, Br_addr, IR_sig, clk)
+        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, Br_addr, IR_sig, clk)
             variable NPC_var : std_logic_vector(15 downto 0);
         begin
            
@@ -53,7 +52,7 @@ architecture behavioral of FETCH is
             else 
                 NPC_var := adder_PC; -- PC incrementor
             end if;
-            NPC <= NPC_var;
+            NPC_Out <= NPC_var;
             if falling_edge(Clk) then
                 PC <= NPC_var; 
             end if;    
