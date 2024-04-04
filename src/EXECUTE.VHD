@@ -31,9 +31,9 @@ entity EXECUTE is
          IN_data        : in std_logic_vector (15 downto 0);
          IN_En          : in std_logic;
          -- Memory
-         Mem_op_in      : in std_logic_vector (2 downto 0);
-         Mem_op_out     : out std_logic_vector (2 downto 0);
-         Mem_imm        : in std_logic_vector (7 downto 0);
+         L_op_in      : in std_logic_vector (2 downto 0);
+         L_op_out     : out std_logic_vector (2 downto 0);
+         L_imm        : in std_logic_vector (7 downto 0);
          RB_data_out    : out std_logic_vector (15 downto 0)
 
      );
@@ -81,11 +81,11 @@ architecture Behavioral of EXECUTE is
         N_flag    <= N_sig;  
         
         -- Memory Signals
-        Mem_op_out <= Mem_op_in;
+        L_op_out <= L_op_in;
         RB_data_out <= RB_data;
                
         -- Setting Flags
-        process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, Mem_op_in, Mem_imm)
+        process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, L_op_in, L_imm)
         begin 
             case BR_en is
                 when '0' =>
@@ -139,15 +139,15 @@ architecture Behavioral of EXECUTE is
                 RW_data_out <= ALU_Result;
             end if;
             
-            if Mem_op_in(2) = '1' then                  -- LOAD / STORE
+            if L_op_in(2) = '1' then                  -- LOAD / STORE
                 RW_data_out <= RA_data;
-            elsif Mem_op_in(2 downto 1) = "01" then     -- LOAD IMM
-                if Mem_op_in(0) = '0' then
-                    RW_data_out <= RA_data(15 downto 8) & Mem_imm;
+            elsif L_op_in(2 downto 1) = "01" then     -- LOAD IMM
+                if L_op_in(0) = '0' then
+                    RW_data_out <= RA_data(15 downto 8) & L_imm;
                 else
-                    RW_data_out <= Mem_imm & RA_data(7 downto 0);
+                    RW_data_out <= L_imm & RA_data(7 downto 0);
                 end if;
-            elsif Mem_op_in = "001" then
+            elsif L_op_in = "001" then
                 RW_data_out <= RA_data;                 -- MOV
             end if;
             

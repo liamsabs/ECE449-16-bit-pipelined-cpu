@@ -127,9 +127,9 @@ architecture behavioral of CONTROL is
                  IN_data        : in std_logic_vector (15 downto 0);
                  IN_En          : in std_logic;
                  -- Memory
-                 Mem_op_in      : in std_logic_vector (2 downto 0);
-                 Mem_op_out     : out std_logic_vector (2 downto 0);
-                 Mem_imm        : in std_logic_vector (7 downto 0);
+                 L_op_in      : in std_logic_vector (2 downto 0);
+                 L_op_out     : out std_logic_vector (2 downto 0);
+                 L_imm        : in std_logic_vector (7 downto 0);
                  RB_data_out    : out std_logic_vector (15 downto 0)
      );
     end component;
@@ -354,9 +354,9 @@ begin
         BR_sub_PC   => ID_EX_BR_sub_PC_Out,
         IN_data     => Input_sig,      
         IN_En       => ID_EX_IN_En_Out,
-        Mem_op_in   => ID_EX_L_op_out,
-        Mem_op_out  => EX_MEM_L_op_in,
-        Mem_imm     => ID_EX_L_imm_In,
+        L_op_in     => ID_EX_L_op_out,
+        L_op_out    => EX_MEM_L_op_in,
+        L_imm       => ID_EX_L_imm_In,
         RB_data_out => EX_MEM_MEM_din_In
     );
     
@@ -381,7 +381,8 @@ begin
         IF_PC_sig <= IF_ID_PC_In;
         
    
-    FWD : process(Clk, Rst, EX_MEM_RW_data_In, ID_WB_data, ID_A_addr, ID_B_addr, EX_MEM_RW_addr_In, ID_WB_addr)
+    FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, 
+    MEM_WB_MEM_dout_In, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data)
     begin        
         -- Forwarding logic (A)
         if ID_EX_RW_addr_Out = ID_A_addr and ID_EX_RW_En_Out = '1'  then -- forward from Execute stage
