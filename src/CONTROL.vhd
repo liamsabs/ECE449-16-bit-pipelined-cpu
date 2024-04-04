@@ -9,9 +9,9 @@ entity CONTROL is
         Clk             : in std_logic;
         Rst             : in std_logic;
         --IR_In_from_TB   : in std_logic_vector (15 downto 0);
-        --Data_In       : in std_logic_vector (15 downto 0);
-        --Data_Out      : out std_logic_vector (15 downto 0);
-        Reset_button   : in std_logic
+        Data_In       : in std_logic_vector (15 downto 0);
+        Data_Out      : out std_logic_vector (15 downto 0);
+        Reset_button    : in std_logic
     );
 end CONTROL;
 
