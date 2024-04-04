@@ -12,7 +12,7 @@ entity FETCH is
         IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
         IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
         PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
-        --NPC_out         : out std_logic_vector (15 downto 0);
+        NPC_out         : out std_logic_vector (15 downto 0);
         IR_ROM          : in std_logic_vector (15 downto 0);
         IR_RAM          : in std_logic_vector (15 downto 0)
         
@@ -40,7 +40,7 @@ architecture behavioral of FETCH is
         IR_out <= IR_in;
         PC_Out <= PC (15 downto 1) & '0';
         
-        PC_process : process (Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, NPC, Br_addr, IR_sig, clk)
+        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, NPC, Br_addr, IR_sig, clk)
             variable NPC_var : std_logic_vector(15 downto 0);
         begin
            
