@@ -506,6 +506,8 @@ begin
                 ID_EX_BR_Op_Out <= ID_EX_BR_Op_In;
                 ID_EX_BR_addr_Out <= ID_EX_BR_addr_In;
                 ID_EX_BR_sub_PC_Out <= ID_EX_BR_sub_PC_In;
+                
+                Data_out <= Output_sig;
             end if;
             
             -- Tracking opcode & PC
