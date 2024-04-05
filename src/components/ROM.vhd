@@ -9,7 +9,7 @@ entity ROM is
         Reset     : in std_logic;  
         Clk       : in std_logic;
         -- Memory Interface Signals       
-        addr_A    : in std_logic_vector (15 downto 0);
+        addr_A    : in std_logic_vector (5 downto 0);
         Dout_A    : out std_logic_vector (15 downto 0)
     );
 end ROM;
@@ -22,9 +22,9 @@ begin
     xpm_memory_sprom_inst : xpm_memory_sprom
     generic map (
         -- Common module generics
-        MEMORY_SIZE             => 8192,           --positive integer
+        MEMORY_SIZE             => 1024,           --positive integer
         MEMORY_PRIMITIVE        => "auto",          --string; "auto", "distributed", or "block";
-        MEMORY_INIT_FILE        => "none",          --string; "none" or "<filename>.mem" 
+        MEMORY_INIT_FILE        => "bootloader.mem",          --string; "none" or "<filename>.mem" 
         MEMORY_INIT_PARAM       => "",              --string;
         USE_MEM_INIT            => 1,               --integer; 0,1
         WAKEUP_TIME             => "disable_sleep", --string; "disable_sleep" or "use_sleep_pin" 
@@ -35,7 +35,7 @@ begin
         
         -- Port A module generics
         READ_DATA_WIDTH_A       => 16,              --positive integer
-        ADDR_WIDTH_A            => 16,               --positive integer
+        ADDR_WIDTH_A            => 6,              --positive integer
         READ_RESET_VALUE_A      => "0",             --string
         READ_LATENCY_A          => 0                --non-negative integer
     )
