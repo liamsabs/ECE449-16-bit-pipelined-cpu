@@ -7,15 +7,151 @@ use xpm.vcomponents.all;
 entity CONTROL is 
     port(
         Clk             : in std_logic;
-        Rst             : in std_logic;
+        Rst_Ex          : in std_logic;
+        Rst_Load        : in std_logic;
         --IR_In_from_TB   : in std_logic_vector (15 downto 0);
-        Data_In       : in std_logic_vector (15 downto 0);
-        Data_Out      : out std_logic_vector (15 downto 0);
-        Reset_button    : in std_logic
+        Data_In         : in std_logic_vector (9 downto 0);
+        Data_Out        : out std_logic;
+        Reset_button    : in std_logic;
+        debug_console   : in STD_LOGIC;
+        board_clock     : in std_logic;
+        vga_red         : out std_logic_vector( 3 downto 0 );
+        vga_green       : out std_logic_vector( 3 downto 0 );
+        vga_blue        : out std_logic_vector( 3 downto 0 );
+        h_sync_signal   : out std_logic;
+        v_sync_signal   : out std_logic
     );
 end CONTROL;
 
 architecture behavioral of CONTROL is
+    -- Console
+    component console is
+        port (
+    
+    --
+    -- Stage 1 Fetch
+    --
+            s1_pc : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            s1_inst : in STD_LOGIC_VECTOR ( 15 downto 0 );
+    
+    
+    --
+    -- Stage 2 Decode
+    --
+            s2_pc : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            s2_inst : in STD_LOGIC_VECTOR ( 15 downto 0 );
+    
+            s2_reg_a : in STD_LOGIC_VECTOR( 2 downto 0 );
+            s2_reg_b : in STD_LOGIC_VECTOR( 2 downto 0 );
+            s2_reg_c : in STD_LOGIC_VECTOR( 2 downto 0 );
+    
+            s2_reg_a_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+            s2_reg_b_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+            s2_reg_c_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+            s2_immediate : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+    
+    --
+    -- Stage 3 Execute
+    --
+            s3_pc : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            s3_inst : in STD_LOGIC_VECTOR ( 15 downto 0 );
+    
+            s3_reg_a : in STD_LOGIC_VECTOR( 2 downto 0 );
+            s3_reg_b : in STD_LOGIC_VECTOR( 2 downto 0 );
+            s3_reg_c : in STD_LOGIC_VECTOR( 2 downto 0 );
+    
+            s3_reg_a_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+            s3_reg_b_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+            s3_reg_c_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+            s3_immediate : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+    --
+    -- Branch and memory operation
+    --
+            s3_r_wb : in STD_LOGIC;
+            s3_r_wb_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+            s3_br_wb : in STD_LOGIC;
+            s3_br_wb_address : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+            s3_mr_wr : in STD_LOGIC;
+            s3_mr_wr_address : in STD_LOGIC_VECTOR( 15 downto 0 );
+            s3_mr_wr_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+            s3_mr_rd : in STD_LOGIC;
+            s3_mr_rd_address : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+    --
+    -- Stage 4 Memory
+    --
+            s4_pc : in STD_LOGIC_VECTOR( 15 downto 0 );
+            s4_inst : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+            s4_reg_a : in STD_LOGIC_VECTOR( 2 downto 0 );
+    
+            s4_r_wb : in STD_LOGIC;
+            s4_r_wb_data : in STD_LOGIC_VECTOR( 15 downto 0 );
+    
+    --
+    -- CPU registers
+    --
+    
+            register_0 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_1 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_2 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_3 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_4 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_5 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_6 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+            register_7 : in STD_LOGIC_VECTOR ( 15 downto 0 );
+    
+    --
+    -- CPU registers overflow flags
+    --
+            register_0_of : in STD_LOGIC;
+            register_1_of : in STD_LOGIC;
+            register_2_of : in STD_LOGIC;
+            register_3_of : in STD_LOGIC;
+            register_4_of : in STD_LOGIC;
+            register_5_of : in STD_LOGIC;
+            register_6_of : in STD_LOGIC;
+            register_7_of : in STD_LOGIC;
+    
+    --
+    -- CPU Flags
+    --
+            zero_flag : in STD_LOGIC;
+            negative_flag : in STD_LOGIC;
+            overflow_flag : in STD_LOGIC;
+    
+    --
+    -- Debug screen enable
+    --
+            debug : in STD_LOGIC;
+    
+    --
+    -- Text console display memory access signals ( clk is the processor clock )
+    --
+            addr_write : in  STD_LOGIC_VECTOR (15 downto 0);
+            clk : in  STD_LOGIC;
+            data_in : in  STD_LOGIC_VECTOR (15 downto 0);
+            en_write : in  STD_LOGIC;
+    
+    --
+    -- Video related signals
+    --
+            board_clock : in STD_LOGIC;
+            v_sync_signal : out STD_LOGIC;
+            h_sync_signal : out STD_LOGIC;
+            vga_red : out STD_LOGIC_VECTOR( 3 downto 0 );
+            vga_green : out STD_LOGIC_VECTOR( 3 downto 0 );
+            vga_blue : out STD_LOGIC_VECTOR( 3 downto 0 )
+    
+        );
+    end component;
     -- ROM Component
     component ROM is
         port(
@@ -149,12 +285,10 @@ architecture behavioral of CONTROL is
      end component;
      
         -- Basic Signals
-        signal Reset                 : std_logic;
-        signal Reset_Ex              : std_logic;
-        signal Reset_Load            : std_logic;
+        signal Rst_Global            : std_logic;
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
-        signal Test_En               : std_logic; -- used for testing device
+        --signal Test_En               : std_logic; -- used for testing device
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         
         -- Tracking opcode and PC
@@ -221,7 +355,7 @@ architecture behavioral of CONTROL is
         signal ID_EX_L_imm_Out       : std_logic_vector (7 downto 0); 
 
         -- Execute Signals
-        signal IN_data               : std_logic_vector (15 downto 0);
+        signal Data_in_extended      : std_logic_vector (15 downto 0);
         signal Z_flag, N_flag        : std_logic;
         signal Moverflow_Flag        : std_logic;
     
@@ -269,17 +403,134 @@ architecture behavioral of CONTROL is
         -- Branching
         signal EX_IF_BR_addr    : std_logic_vector (15 downto 0);
         signal EX_IF_BR_CTRL    : std_logic;
-        
 begin
+    console_display : console
+    port map
+    (
+    --
+    -- Stage 1 Fetch
+    --
+        s1_pc => IF_PC_sig,
+        s1_inst => IF_OP_sig,
+    
+    --
+    -- Stage 2 Decode
+    --
+    
+        s2_pc => ID_PC_sig,
+        s2_inst => ID_OP_sig,
+    
+        s2_reg_a => "000",
+        s2_reg_b => "000",
+        s2_reg_c => "000",
+    
+        s2_reg_a_data => x"0000",
+        s2_reg_b_data => x"0000",
+        s2_reg_c_data => x"0000",
+        s2_immediate => x"0000",
+    
+    --
+    -- Stage 3 Execute
+    --
+    
+        s3_pc => EX_PC_sig,
+        s3_inst => EX_OP_sig,
+    
+        s3_reg_a => "000",
+        s3_reg_b => "000",
+        s3_reg_c => "000",
+    
+        s3_reg_a_data => x"0000",
+        s3_reg_b_data => x"0000",
+        s3_reg_c_data => x"0000",
+        s3_immediate => x"0000",
+    
+        s3_r_wb => '0',
+        s3_r_wb_data => x"0000",
+    
+        s3_br_wb => '0',
+        s3_br_wb_address => x"0000",
+    
+        s3_mr_wr => '0',
+        s3_mr_wr_address => x"0000",
+        s3_mr_wr_data => x"0000",
+    
+        s3_mr_rd => '0',
+        s3_mr_rd_address => x"0000",
+    
+    --
+    -- Stage 4 Memory
+    --
+    
+        s4_pc => MEM_PC_sig,
+        s4_inst => MEM_OP_sig,
+        s4_reg_a => "000",
+        s4_r_wb => '0',
+        s4_r_wb_data => x"0000",
+    
+    --
+    -- CPU registers
+    --
+    
+        register_0 => x"0000",
+        register_1 => x"0000",
+        register_2 => x"0000",
+        register_3 => x"0000",
+        register_4 => x"0000",
+        register_5 => x"0000",
+        register_6 => x"0000",
+        register_7 => x"0000",
+    
+        register_0_of => '0',
+        register_1_of => '0',
+        register_2_of => '0',
+        register_3_of => '0',
+        register_4_of => '0',
+        register_5_of => '0',
+        register_6_of => '0',
+        register_7_of => '0',
+    
+    --
+    -- CPU Flags
+    --
+        zero_flag => '0',
+        negative_flag => '0',
+        overflow_flag => '0',
+    
+    --
+    -- Debug screen enable
+    --
+        debug => debug_console,
+    
+    --
+    -- Text console display memory access signals ( clk is the processor clock )
+    --
+    
+        clk => '0',
+        addr_write => x"0000",
+        data_in => x"0000",
+        en_write => '0',
+    
+    --
+    -- Video related signals
+    --
+    
+        board_clock => board_clock,
+        h_sync_signal => h_sync_signal,
+        v_sync_signal => v_sync_signal,
+        vga_red => vga_red,
+        vga_green => vga_green,
+        vga_blue => vga_blue
+    );
     ROM_inst   : ROM port map (
-        Reset    => Reset,      
+        Reset    => Rst_Global,      
         Clk      => Clk,           
         addr_A   => ROM_addra,
         Dout_A   => ROM_douta    
     );
     
     RAM_inst   : RAM port map (
-        Reset   => Reset,             
+        Reset   => Rst_Global,             
         Clk     => Clk,         
         addr_A  => RAM_addra,
         Dout_A  => RAM_douta,   
@@ -291,11 +542,11 @@ begin
      
     FetchStage : FETCH port map (
         Clk        => Clk,             
-        Reset_Ex   => Reset_Ex,    
-        Reset_Load => Reset_Load,                          
+        Reset_Ex   => Rst_Ex,    
+        Reset_Load => Rst_Load,                          
         BR_addr    => EX_MEM_BR_addr_Out,   
         BR_CTRL    => EX_MEM_BR_CTRL_Out,        
-        Test_en    => Test_En,
+        Test_en    => '0',
         IR_out     => IF_ID_IR_In,                   
         IR_in      => Instruction_in_sig,          
         PC_out     => PC_sig,         
@@ -306,7 +557,7 @@ begin
     
     Decoder : DECODE port map (
         Clk       => Clk, 
-        ID_Reset  => Reset,     
+        ID_Reset  => Rst_Global,     
         ID_IR_in  => IF_ID_IR_Out,
         WB_data   => ID_WB_data,
         WB_addr   => ID_WB_addr,
@@ -353,7 +604,7 @@ begin
         BR_addr_in  => ID_EX_BR_addr_Out,
         BR_addr_out => EX_MEM_BR_addr_In,
         BR_sub_PC   => ID_EX_BR_sub_PC_Out,
-        IN_data     => Data_In,      
+        IN_data     => Data_in_extended,      
         IN_En       => ID_EX_IN_En_Out,
         L_op_in     => ID_EX_L_op_out,
         L_op_out    => EX_MEM_L_op_in,
@@ -362,7 +613,7 @@ begin
     );
     
     WriteBackStage: WRITEBACK port map (
-        WB_Reset  => Reset,	        
+        WB_Reset  => Rst_Global,	        
         W_data    => MEM_WB_RW_data_Out,
         MEM_data  => MEM_WB_MEM_dout_Out, 
         W_addr    => MEM_WB_RW_addr_Out,         
@@ -373,8 +624,8 @@ begin
         WB_En     => ID_WB_En      
     );
         
-        --Clk_sig <= Clk;
-        Reset <= Rst;
+        -- Reset Handling
+        Rst_Global <= Rst_Ex or Rst_Load;
         --Instruction_in_sig <= IR_In_from_TB; 
         
         -- Tracking opcode & PC
@@ -384,6 +635,9 @@ begin
         -- ROM and RAM Port B for reading in Fetch
         ROM_addra <= PC_sig (5 downto 0);
         RAM_addrb <= PC_sig (8 downto 0);
+        
+        -- Input Output
+        Data_in_extended <= Data_In & "000000";
        
         
         
@@ -455,9 +709,9 @@ begin
            
     end process MEM;
     
-    IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
+    IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Rst_Global)
     begin
-        if Reset = '1' then
+        if Rst_Global = '1' then
             IF_ID_IR_Out <= (others => '0');
             IF_ID_PC_Out <= (others => '0');
             -- Tracking opcode & PC
@@ -477,12 +731,12 @@ begin
         end if;
     end process IF_ID;
 
-    ID_EX : process (Clk, EX_MEM_BR_CTRL_Out, Reset, ID_EX_ALU_op_In, 
+    ID_EX : process (Clk, EX_MEM_BR_CTRL_Out, Rst_Global, ID_EX_ALU_op_In, 
     ID_EX_Shiftamt_In, ID_EX_RA_data_In, ID_EX_RB_data_In, ID_EX_RW_addr_In, 
     ID_EX_RW_En_In, ID_EX_IN_En_In, ID_EX_Out_In, ID_EX_BR_En_In, ID_EX_BR_Op_In, 
     ID_EX_BR_addr_In, ID_EX_BR_sub_PC_In)
     begin
-        if Reset = '1' then
+        if Rst_Global = '1' then
             ID_EX_ALU_op_Out <= (others => '0');
             ID_EX_Shiftamt_Out <= (others => '0');
             ID_EX_RA_data_Out <= (others => '0');
@@ -534,7 +788,7 @@ begin
                 ID_EX_BR_sub_PC_Out <= ID_EX_BR_sub_PC_In;
                 ID_EX_L_op_Out <= ID_EX_L_op_In;
                 ID_EX_L_imm_Out <= ID_EX_L_imm_In;
-                Data_out <= Output_sig;
+                Data_out <= Output_sig(0);
                 -- Tracking opcode & PC
                 EX_OP_sig <= ID_OP_sig;
                 EX_PC_sig <= ID_PC_sig;
@@ -542,9 +796,9 @@ begin
         end if;
     end process ID_EX;
 
-    EX_MEM : process (EX_MEM_RW_data_In, EX_MEM_RW_addr_In, EX_MEM_RW_En_In, EX_MEM_BR_CTRL_Out, EX_MEM_BR_addr_In, Clk, Reset)
+    EX_MEM : process (EX_MEM_RW_data_In, EX_MEM_RW_addr_In, EX_MEM_RW_En_In, EX_MEM_BR_CTRL_Out, EX_MEM_BR_addr_In, Clk, Rst_Global)
     begin
-        if Reset = '1' then
+        if Rst_Global = '1' then
             EX_MEM_RW_data_Out <= (others => '0');
             EX_MEM_RW_addr_Out <= (others => '0');
             EX_MEM_RW_En_Out   <= '0';
@@ -581,9 +835,9 @@ begin
         end if;
     end process EX_MEM;
 
-    MEM_WB : process (Clk, MEM_WB_RW_data_In, MEM_WB_RW_addr_In, MEM_WB_RW_En_In, Reset)
+    MEM_WB : process (Clk, MEM_WB_RW_data_In, MEM_WB_RW_addr_In, MEM_WB_RW_En_In, Rst_Global)
     begin      
-        if Reset = '1' then
+        if Rst_Global = '1' then
             MEM_WB_RW_data_Out <= (others => '0');
             MEM_WB_MEM_dout_Out <= (others => '0');
             MEM_WB_RW_addr_Out <= (others => '0');
