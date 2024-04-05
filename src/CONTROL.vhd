@@ -436,27 +436,27 @@ begin
         s3_pc => EX_PC_sig,
         s3_inst => EX_OP_sig,
     
-        s3_reg_a => "000",
-        s3_reg_b => "000",
-        s3_reg_c => "000",
+        s3_reg_a => EX_OP_sig(8 downto 6),
+        s3_reg_b => EX_OP_sig(5 downto 3),
+        s3_reg_c => EX_OP_sig(2 downto 0),
     
-        s3_reg_a_data => x"0000",
-        s3_reg_b_data => x"0000",
-        s3_reg_c_data => x"0000",
-        s3_immediate => x"0000",
+        s3_reg_a_data => ID_EX_RW_addr_Out,
+        s3_reg_b_data => ID_EX_RA_data_Out,
+        s3_reg_c_data => ID_EX_RB_data_Out,
+        s3_immediate => ID_EX_In_EN_In,
     
-        s3_r_wb => '0',
-        s3_r_wb_data => x"0000",
+        s3_r_wb => ID_WB_addr,
+        s3_r_wb_data => ID_WB_data,
     
-        s3_br_wb => '0',
-        s3_br_wb_address => x"0000",
+        s3_br_wb => EX_MEM_BR_CTRL_In,
+        s3_br_wb_address => EX_MEM_BR_addr_In,
     
-        s3_mr_wr => '0',
-        s3_mr_wr_address => x"0000",
-        s3_mr_wr_data => x"0000",
+        s3_mr_wr => EX_MEM_RW_En_In,
+        s3_mr_wr_address => EX_MEM_RW_addr_In,
+        s3_mr_wr_data => EX_MEM_MEM_din_In,
     
-        s3_mr_rd => '0',
-        s3_mr_rd_address => x"0000",
+        s3_mr_rd => EX_MEM_RW_En_In,
+        s3_mr_rd_address => EX_MEM_RW_addr_In,
     
     --
     -- Stage 4 Memory
