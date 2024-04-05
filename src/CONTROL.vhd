@@ -231,7 +231,16 @@ architecture behavioral of CONTROL is
             FW_B_En        : in std_logic; -- input to be used to determine if forwarding RB
             -- Memory 
             L_op           : out std_logic_vector (2 downto 0); -- '000' L NOOP,'001' for MOV, '01x' LoadImm LSB is m.1.,'100' LOAD, and '101' STORE
-            L_imm          : out std_logic_vector (7 downto 0) -- immediate used for Load Imm
+            L_imm          : out std_logic_vector (7 downto 0); -- immediate used for Load Imm
+            -- Register Monitoring
+            R0             : out std_logic_vector (15 downto 0);
+            R1             : out std_logic_vector (15 downto 0);
+            R2             : out std_logic_vector (15 downto 0);
+            R3             : out std_logic_vector (15 downto 0);
+            R4             : out std_logic_vector (15 downto 0);
+            R5             : out std_logic_vector (15 downto 0);
+            R6             : out std_logic_vector (15 downto 0);
+            R7             : out std_logic_vector (15 downto 0)
         );
     end component;
     -- Decode Component
@@ -401,8 +410,19 @@ architecture behavioral of CONTROL is
         signal ID_WB_En              : std_logic;
 
         -- Branching
-        signal EX_IF_BR_addr    : std_logic_vector (15 downto 0);
-        signal EX_IF_BR_CTRL    : std_logic;
+        signal EX_IF_BR_addr        : std_logic_vector (15 downto 0);
+        signal EX_IF_BR_CTRL        : std_logic;
+        
+        -- register File monitoring
+        signal R0                   : std_logic_vector (15 downto 0);
+        signal R1                   : std_logic_vector (15 downto 0);
+        signal R2                   : std_logic_vector (15 downto 0);
+        signal R3                   : std_logic_vector (15 downto 0);
+        signal R4                   : std_logic_vector (15 downto 0);
+        signal R5                   : std_logic_vector (15 downto 0);
+        signal R6                   : std_logic_vector (15 downto 0);
+        signal R7                   : std_logic_vector (15 downto 0);
+                  
 begin
     console_display : console
     port map
@@ -472,14 +492,14 @@ begin
     -- CPU registers
     --
     
-        register_0 => x"0000",
-        register_1 => x"0000",
-        register_2 => x"0000",
-        register_3 => x"0000",
-        register_4 => x"0000",
-        register_5 => x"0000",
-        register_6 => x"0000",
-        register_7 => x"0000",
+        register_0 => R0,
+        register_1 => R1,
+        register_2 => R2,
+        register_3 => R3,
+        register_4 => R4,
+        register_5 => R5,
+        register_6 => R6,
+        register_7 => R7,
     
         register_0_of => '0',
         register_1_of => '0',
@@ -493,9 +513,9 @@ begin
     --
     -- CPU Flags
     --
-        zero_flag => '0',
-        negative_flag => '0',
-        overflow_flag => '0',
+        zero_flag => Z_flag,
+        negative_flag => N_flag,
+        overflow_flag => Moverflow_Flag,
     
     --
     -- Debug screen enable
@@ -582,7 +602,16 @@ begin
         FW_B_data => FW_B_data,
         FW_B_En   => FW_B_En,
         L_op      => ID_EX_L_op_In,
-        L_imm     => ID_EX_L_imm_In  
+        L_imm     => ID_EX_L_imm_In,
+        -- Register Monitoring
+        R0 => R0, 
+        R1 => R1, 
+        R2 => R2, 
+        R3 => R3,
+        R4 => R4, 
+        R5 => R5, 
+        R6 => R6,
+        R7 => R7  
     );
     
     ExecuteStage : EXECUTE port map (

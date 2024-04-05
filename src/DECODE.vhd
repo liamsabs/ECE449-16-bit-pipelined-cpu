@@ -36,7 +36,16 @@ entity DECODE is
         FW_B_En        : in std_logic; -- input to be used to determine if forwarding RB
         -- Memory 
         L_op           : out std_logic_vector (2 downto 0); -- '000' L NOOP,'001' for MOV, '01x' LoadImm LSB is m.1.,'100' LOAD, and '101' STORE
-        L_imm          : out std_logic_vector (7 downto 0) -- immediate used for Load Imm
+        L_imm          : out std_logic_vector (7 downto 0); -- immediate used for Load Imm
+        -- Register Monitoring
+        R0             : out std_logic_vector (15 downto 0);
+        R1             : out std_logic_vector (15 downto 0);
+        R2             : out std_logic_vector (15 downto 0);
+        R3             : out std_logic_vector (15 downto 0);
+        R4             : out std_logic_vector (15 downto 0);
+        R5             : out std_logic_vector (15 downto 0);
+        R6             : out std_logic_vector (15 downto 0);
+        R7             : out std_logic_vector (15 downto 0) 
     );
 end DECODE;
 
@@ -44,17 +53,25 @@ architecture behavioral of DECODE is
 
 -- Componenents
 component register_file is
-    port (
-    rst : in std_logic; clk: in std_logic;
-    --read signals
-    rd_index1: in std_logic_vector(2 downto 0); 
-    rd_index2: in std_logic_vector(2 downto 0); 
-    rd_data1: out std_logic_vector(15 downto 0); 
-    rd_data2: out std_logic_vector(15 downto 0);
-    --write signals
-    wr_index: in std_logic_vector(2 downto 0); 
-    wr_data: in std_logic_vector(15 downto 0); 
-    wr_enable: in std_logic
+    port(rst : in std_logic; clk: in std_logic;
+        --read signals
+        rd_index1: in std_logic_vector(2 downto 0); 
+        rd_index2: in std_logic_vector(2 downto 0); 
+        rd_data1: out std_logic_vector(15 downto 0); 
+        rd_data2: out std_logic_vector(15 downto 0);
+        --write signals
+        wr_index: in std_logic_vector(2 downto 0); 
+        wr_data: in std_logic_vector(15 downto 0);
+        wr_enable: in std_logic;
+        -- Register File Outputs
+        R0 : out std_logic_vector (15 downto 0);
+        R1 : out std_logic_vector (15 downto 0);
+        R2 : out std_logic_vector (15 downto 0);
+        R3 : out std_logic_vector (15 downto 0);
+        R4 : out std_logic_vector (15 downto 0);
+        R5 : out std_logic_vector (15 downto 0);
+        R6 : out std_logic_vector (15 downto 0);
+        R7 : out std_logic_vector (15 downto 0)
     );
 end component;
 
@@ -110,7 +127,15 @@ begin
         rd_data2  => RB_data_sig,
         wr_index  => WB_addr,
         wr_data   => WB_data,
-        wr_enable => WB_En
+        wr_enable => WB_En,
+        R0 => R0, 
+        R1 => R1, 
+        R2 => R2, 
+        R3 => R3,
+        R4 => R4, 
+        R5 => R5, 
+        R6 => R6,
+        R7 => R7
         );
     b1disp : B1dispformatter port map ( -- performs *2 and sign extend for BRR
         disp1 => disp1_sig,
