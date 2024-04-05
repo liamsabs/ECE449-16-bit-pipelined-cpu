@@ -11,10 +11,13 @@ entity CONTROL is
         --IR_In_from_TB   : in std_logic_vector (15 downto 0);
         Data_In         : in std_logic_vector (15 downto 0);
         Data_Out        : out std_logic_vector (15 downto 0);
-        Reset_button    : in std_logic;debug_console : in STD_LOGIC;
-        board_clock     : in std_logic;vga_red : out std_logic_vector( 3 downto 0 );
+        Reset_button    : in std_logic;
+        debug_console   : in STD_LOGIC;
+        board_clock     : in std_logic;
+        vga_red         : out std_logic_vector( 3 downto 0 );
         vga_green       : out std_logic_vector( 3 downto 0 );
-        vga_blue        : out std_logic_vector( 3 downto 0 );h_sync_signal : out std_logic;
+        vga_blue        : out std_logic_vector( 3 downto 0 );
+        h_sync_signal   : out std_logic;
         v_sync_signal   : out std_logic
     );
 end CONTROL;
