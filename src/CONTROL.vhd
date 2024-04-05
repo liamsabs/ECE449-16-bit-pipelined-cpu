@@ -410,15 +410,15 @@ begin
     --
     -- Stage 1 Fetch
     --
-        s1_pc => x"0000",
-        s1_inst => x"0000",
+        s1_pc => IF_PC_sig,
+        s1_inst => IF_OP_sig,
     
     --
     -- Stage 2 Decode
     --
     
-        s2_pc => x"0000",
-        s2_inst => x"0000",
+        s2_pc => ID_PC_sig,
+        s2_inst => ID_OP_sig,
     
         s2_reg_a => "000",
         s2_reg_b => "000",
@@ -433,8 +433,8 @@ begin
     -- Stage 3 Execute
     --
     
-        s3_pc => x"0000",
-        s3_inst => x"0000",
+        s3_pc => EX_PC_sig,
+        s3_inst => EX_OP_sig,
     
         s3_reg_a => "000",
         s3_reg_b => "000",
@@ -462,8 +462,8 @@ begin
     -- Stage 4 Memory
     --
     
-        s4_pc => x"0000",
-        s4_inst => x"0000",
+        s4_pc => MEM_PC_sig,
+        s4_inst => MEM_OP_sig,
         s4_reg_a => "000",
         s4_r_wb => '0',
         s4_r_wb_data => x"0000",
