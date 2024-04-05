@@ -330,7 +330,9 @@ begin
         FW_A_En   => FW_A_En,
         RB_addr   => ID_B_addr,
         FW_B_data => FW_B_data,
-        FW_B_En   => FW_B_En  
+        FW_B_En   => FW_B_En,
+        L_op      => ID_EX_L_op_In,
+        L_imm     => ID_EX_L_imm_In  
     );
     
     ExecuteStage : EXECUTE port map (
@@ -356,7 +358,7 @@ begin
         IN_En       => ID_EX_IN_En_Out,
         L_op_in     => ID_EX_L_op_out,
         L_op_out    => EX_MEM_L_op_in,
-        L_imm       => ID_EX_L_imm_In,
+        L_imm       => ID_EX_L_imm_Out,
         RB_data_out => EX_MEM_MEM_din_In
     );
     
@@ -394,7 +396,7 @@ begin
             if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
                 FW_A_data <= MEM_WB_MEM_dout_In;
             else
-                FW_A_data <= MEM_WB_RW_data_In;
+                FW_A_data <= EX_MEM_RW_data_Out;
             end if;     
         elsif ID_WB_addr = ID_A_addr and ID_WB_En = '1' then -- Forward from Writeback stage
             FW_A_En <= '1';
@@ -414,7 +416,7 @@ begin
             if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
                 FW_B_data <= MEM_WB_MEM_dout_In;
             else
-                FW_B_data <= MEM_WB_RW_data_In;
+                FW_B_data <= EX_MEM_RW_data_Out;
             end if;     
         elsif ID_WB_addr = ID_B_addr and ID_WB_En = '1' then -- Forward from Writeback stage
             FW_B_En <= '1';
@@ -450,27 +452,23 @@ begin
     
     IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
     begin
-        if falling_edge(Clk) then
+        if Reset = '1' then
+            IF_ID_IR_Out <= (others => '0');
+            IF_ID_PC_Out <= (others => '0');
+            -- Tracking opcode & PC
+            ID_OP_sig <= (others => '0');
+            ID_PC_sig <= (others => '0');
+        elsif falling_edge(Clk) then
             if EX_MEM_BR_CTRL_Out = '1' then
                 IF_ID_IR_Out <= (others => '0');
                 IF_ID_PC_Out <= (others => '0');
             else
                 IF_ID_IR_Out <= IF_ID_IR_In;
                 IF_ID_PC_Out <= IF_ID_PC_In;
+                -- Tracking opcode & PC
+                ID_OP_sig <= IF_OP_sig;
+                ID_PC_sig <= IF_OP_sig;
             end if;
-            
-            -- Tracking opcode & PC
-            ID_OP_sig <= IF_OP_sig;
-            ID_PC_sig <= IF_OP_sig;
-            
-        end if;
-        if Reset ='1' then
-            IF_ID_IR_Out <= (others => '0');
-            IF_ID_PC_Out <= (others => '0');
-            
-            -- Tracking opcode & PC
-            ID_OP_sig <= (others => '0');
-            ID_PC_sig <= (others => '0');
         end if;
     end process IF_ID;
 
@@ -479,42 +477,6 @@ begin
     ID_EX_RW_En_In, ID_EX_IN_En_In, ID_EX_Out_In, ID_EX_BR_En_In, ID_EX_BR_Op_In, 
     ID_EX_BR_addr_In, ID_EX_BR_sub_PC_In)
     begin
-        if falling_edge(Clk) then
-            if EX_MEM_BR_CTRL_Out = '1' or Reset = '1' then
-                ID_EX_ALU_op_Out <= (others => '0');
-                ID_EX_Shiftamt_Out <= (others => '0');
-                ID_EX_RA_data_Out <= (others => '0');
-                ID_EX_RB_data_Out <= (others => '0');
-                ID_EX_RW_addr_Out <= (others => '0');
-                ID_EX_RW_En_Out <= '0';
-                ID_EX_IN_En_Out <= '0';
-                ID_EX_Out_Out <= (others => '0');
-                ID_EX_BR_En_Out <= '0';
-                ID_EX_BR_Op_Out <= (others => '0');
-                ID_EX_BR_addr_Out <= (others => '0');
-                ID_EX_BR_sub_PC_Out <= (others => '0');
-            else
-                ID_EX_ALU_op_Out <= ID_EX_ALU_op_In;
-                ID_EX_Shiftamt_Out <= ID_EX_Shiftamt_In;
-                ID_EX_RA_data_Out <= ID_EX_RA_data_In;
-                ID_EX_RB_data_Out <= ID_EX_RB_data_In;
-                ID_EX_RW_addr_Out <= ID_EX_RW_addr_In;
-                ID_EX_RW_En_Out <= ID_EX_RW_En_In;
-                ID_EX_IN_En_Out <= ID_EX_IN_En_In;
-                ID_EX_Out_Out <= ID_EX_Out_In;
-                ID_EX_BR_En_Out <= ID_EX_BR_En_In;
-                ID_EX_BR_Op_Out <= ID_EX_BR_Op_In;
-                ID_EX_BR_addr_Out <= ID_EX_BR_addr_In;
-                ID_EX_BR_sub_PC_Out <= ID_EX_BR_sub_PC_In;
-                
-                Data_out <= Output_sig;
-            end if;
-            
-            -- Tracking opcode & PC
-            EX_OP_sig <= ID_OP_sig;
-            EX_PC_sig <= ID_OP_sig;
-            
-        end if;
         if Reset = '1' then
             ID_EX_ALU_op_Out <= (others => '0');
             ID_EX_Shiftamt_Out <= (others => '0');
@@ -528,10 +490,50 @@ begin
             ID_EX_BR_Op_Out <= (others => '0');
             ID_EX_BR_addr_Out <= (others => '0');
             ID_EX_BR_sub_PC_Out <= (others => '0');
-            
+            ID_EX_L_op_Out    <= (others => '0');
+            ID_EX_L_imm_Out   <= (others => '0');
             -- Tracking opcode & PC
             EX_OP_sig <= (others => '0');
             EX_PC_sig <= (others => '0');
+        elsif falling_edge(Clk) then
+            if EX_MEM_BR_CTRL_Out = '1' then
+                ID_EX_ALU_op_Out <= (others => '0');
+                ID_EX_Shiftamt_Out <= (others => '0');
+                ID_EX_RA_data_Out <= (others => '0');
+                ID_EX_RB_data_Out <= (others => '0');
+                ID_EX_RW_addr_Out <= (others => '0');
+                ID_EX_RW_En_Out <= '0';
+                ID_EX_IN_En_Out <= '0';
+                ID_EX_Out_Out <= (others => '0');
+                ID_EX_BR_En_Out <= '0';
+                ID_EX_BR_Op_Out <= (others => '0');
+                ID_EX_BR_addr_Out <= (others => '0');
+                ID_EX_BR_sub_PC_Out <= (others => '0');
+                ID_EX_L_op_Out    <= (others => '0');
+                ID_EX_L_imm_Out   <= (others => '0');
+                -- Tracking opcode & PC
+                EX_OP_sig <= (others => '0');
+                EX_PC_sig <= (others => '0');
+            else
+                ID_EX_ALU_op_Out <= ID_EX_ALU_op_In;
+                ID_EX_Shiftamt_Out <= ID_EX_Shiftamt_In;
+                ID_EX_RA_data_Out <= ID_EX_RA_data_In;
+                ID_EX_RB_data_Out <= ID_EX_RB_data_In;
+                ID_EX_RW_addr_Out <= ID_EX_RW_addr_In;
+                ID_EX_RW_En_Out <= ID_EX_RW_En_In;
+                ID_EX_IN_En_Out <= ID_EX_IN_En_In;
+                ID_EX_Out_Out <= ID_EX_Out_In;
+                ID_EX_BR_En_Out <= ID_EX_BR_En_In;
+                ID_EX_BR_Op_Out <= ID_EX_BR_Op_In;
+                ID_EX_BR_addr_Out <= ID_EX_BR_addr_In;
+                ID_EX_BR_sub_PC_Out <= ID_EX_BR_sub_PC_In;
+                ID_EX_L_op_Out <= ID_EX_L_op_In;
+                ID_EX_L_imm_Out <= ID_EX_L_imm_In;
+                Data_out <= Output_sig;
+                -- Tracking opcode & PC
+                EX_OP_sig <= ID_OP_sig;
+                EX_PC_sig <= ID_OP_sig;
+            end if; 
         end if;
     end process ID_EX;
 
@@ -542,7 +544,9 @@ begin
             EX_MEM_RW_addr_Out <= (others => '0');
             EX_MEM_RW_En_Out   <= '0';
             EX_MEM_BR_CTRL_Out <= '0';
-            EX_MEM_BR_addr_Out <= (others => '0'); 
+            EX_MEM_BR_addr_Out <= (others => '0');
+            EX_MEM_MEM_din_Out <= (others => '0');
+            EX_MEM_L_op_Out <= (others => '0'); 
             -- Tracking opcode & PC
             MEM_OP_sig <= (others => '0');
             MEM_PC_sig <= (others => '0');
@@ -552,7 +556,9 @@ begin
                 EX_MEM_RW_addr_Out <= (others => '0');
                 EX_MEM_RW_En_Out   <= '0';
                 EX_MEM_BR_CTRL_Out <= '0';
-                EX_MEM_BR_addr_Out <= (others => '0'); 
+                EX_MEM_BR_addr_Out <= (others => '0');
+                EX_MEM_MEM_din_Out <= EX_MEM_MEM_din_In;
+                EX_MEM_L_op_Out <= (others => '0'); 
                 -- Tracking opcode & PC
                 MEM_OP_sig <= (others => '0');
                 MEM_PC_sig <= (others => '0');
@@ -562,6 +568,7 @@ begin
                 EX_MEM_RW_En_Out   <= EX_MEM_RW_En_In;
                 EX_MEM_BR_CTRL_Out <= EX_MEM_BR_CTRL_In;
                 EX_MEM_BR_addr_Out <= EX_MEM_BR_addr_In;
+                EX_MEM_L_op_Out <= EX_MEM_L_op_In;
                 -- Tracking opcode & PC
                 MEM_OP_sig <= EX_OP_sig;
                 MEM_PC_sig <= EX_OP_sig;
@@ -573,15 +580,19 @@ begin
     begin      
         if Reset = '1' then
             MEM_WB_RW_data_Out <= (others => '0');
+            MEM_WB_MEM_dout_Out <= (others => '0');
             MEM_WB_RW_addr_Out <= (others => '0');
             MEM_WB_RW_En_Out <= '0';
+            MEM_WB_L_op_Out <= (others => '0');
             -- Tracking opcode & PC
             WB_OP_sig <= (others => '0');
             WB_PC_sig <= (others => '0'); 
         elsif falling_edge(Clk) then
             MEM_WB_RW_data_Out <= MEM_WB_RW_data_In;
+            MEM_WB_MEM_dout_Out <= MEM_WB_MEM_dout_In;
             MEM_WB_RW_addr_Out <= MEM_WB_RW_addr_In;
             MEM_WB_RW_En_Out <= MEM_WB_RW_En_In;
+            MEM_WB_L_op_Out <= MEM_WB_L_op_In;
             -- Tracking opcode & PC
             WB_OP_sig <= MEM_OP_sig;
             WB_PC_sig <= MEM_OP_sig;      

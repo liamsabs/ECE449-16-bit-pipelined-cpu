@@ -54,7 +54,6 @@ architecture Behavioral of EXECUTE is
 
     signal ALU_Result : std_logic_vector(15 downto 0);              -- ALU Result
     signal ALU_Result_upper : std_logic_vector(15 downto 0);        -- ALU upper word for multiplication
-    signal Moverflow_sig : std_logic;                               -- Overflow from multiplication
     signal RW_addr_sig : std_logic_vector (2 downto 0);             -- Address for WB
     signal RW_En_sig : std_logic;                                   -- Enable for WB
     signal Z_sig : std_logic; -- Z flag visible from within execute for conditional branching
@@ -76,7 +75,6 @@ architecture Behavioral of EXECUTE is
         BR_addr_out <= BR_addr_in;
         
         -- Routing Flag Signals
-        Moverflow <= Moverflow_sig;
         Z_flag    <= Z_sig;
         N_flag    <= N_sig;  
         
@@ -105,9 +103,9 @@ architecture Behavioral of EXECUTE is
                         end if;  
                     elsif ALU_op = "011" then
                         if alu_result_upper = X"0000" or alu_result_upper = X"FFFF" then
-                            Moverflow_sig <= '1';
+                            Moverflow <= '1';
                         else 
-                            Moverflow_sig <= '0';
+                            Moverflow <= '0';
                         end if;
                     end if;
                     BR_CTRL <= '0'; -- set to no branching by default    
