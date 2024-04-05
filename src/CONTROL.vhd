@@ -151,8 +151,7 @@ architecture behavioral of CONTROL is
         -- Basic Signals
         signal Reset                 : std_logic;
         signal Reset_Ex              : std_logic;
-        signal Reset_Load            : std_logic;   
-        signal Input_sig             : std_logic_vector (15 downto 0);
+        signal Reset_Load            : std_logic;
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
         signal Test_En               : std_logic; -- used for testing device
@@ -354,7 +353,7 @@ begin
         BR_addr_in  => ID_EX_BR_addr_Out,
         BR_addr_out => EX_MEM_BR_addr_In,
         BR_sub_PC   => ID_EX_BR_sub_PC_Out,
-        IN_data     => Input_sig,      
+        IN_data     => Data_In,      
         IN_En       => ID_EX_IN_En_Out,
         L_op_in     => ID_EX_L_op_out,
         L_op_out    => EX_MEM_L_op_in,
@@ -380,10 +379,16 @@ begin
         
         -- Tracking opcode & PC
         IF_OP_sig <= IF_ID_IR_In;
-        IF_PC_sig <= IF_ID_PC_In;
+        IF_PC_sig <= PC_sig;
+        
+        -- ROM and RAM Port B for reading in Fetch
+        ROM_addra <= PC_sig (5 downto 0);
+        RAM_addrb <= PC_sig (8 downto 0);
+       
+        
         
    
-    FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, 
+    FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, EX_MEM_RW_data_Out,  
     MEM_WB_MEM_dout_In, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data, ID_A_addr, ID_B_addr)
     begin        
         -- Forwarding logic (A)
@@ -467,7 +472,7 @@ begin
                 IF_ID_PC_Out <= IF_ID_PC_In;
                 -- Tracking opcode & PC
                 ID_OP_sig <= IF_OP_sig;
-                ID_PC_sig <= IF_OP_sig;
+                ID_PC_sig <= IF_PC_sig;
             end if;
         end if;
     end process IF_ID;
@@ -532,7 +537,7 @@ begin
                 Data_out <= Output_sig;
                 -- Tracking opcode & PC
                 EX_OP_sig <= ID_OP_sig;
-                EX_PC_sig <= ID_OP_sig;
+                EX_PC_sig <= ID_PC_sig;
             end if; 
         end if;
     end process ID_EX;
@@ -571,7 +576,7 @@ begin
                 EX_MEM_L_op_Out <= EX_MEM_L_op_In;
                 -- Tracking opcode & PC
                 MEM_OP_sig <= EX_OP_sig;
-                MEM_PC_sig <= EX_OP_sig;
+                MEM_PC_sig <= EX_PC_sig;
             end if;
         end if;
     end process EX_MEM;
@@ -595,7 +600,7 @@ begin
             MEM_WB_L_op_Out <= MEM_WB_L_op_In;
             -- Tracking opcode & PC
             WB_OP_sig <= MEM_OP_sig;
-            WB_PC_sig <= MEM_OP_sig;      
+            WB_PC_sig <= MEM_PC_sig;      
         end if;
     end process MEM_WB;
         
