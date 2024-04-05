@@ -7,10 +7,11 @@ use xpm.vcomponents.all;
 entity CONTROL is 
     port(
         Clk             : in std_logic;
-        Rst             : in std_logic;
+        Rst_Ex          : in std_logic;
+        Rst_Load        : in std_logic;
         --IR_In_from_TB   : in std_logic_vector (15 downto 0);
-        Data_In         : in std_logic_vector (15 downto 0);
-        Data_Out        : out std_logic_vector (15 downto 0);
+        Data_In         : in std_logic_vector (9 downto 0);
+        Data_Out        : out std_logic;
         Reset_button    : in std_logic;
         debug_console   : in STD_LOGIC;
         board_clock     : in std_logic;
@@ -284,12 +285,10 @@ architecture behavioral of CONTROL is
      end component;
      
         -- Basic Signals
-        signal Reset                 : std_logic;
-        signal Reset_Ex              : std_logic;
-        signal Reset_Load            : std_logic;
+        signal Rst_Global            : std_logic;
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
-        signal Test_En               : std_logic; -- used for testing device
+        --signal Test_En               : std_logic; -- used for testing device
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         
         -- Tracking opcode and PC
@@ -356,7 +355,7 @@ architecture behavioral of CONTROL is
         signal ID_EX_L_imm_Out       : std_logic_vector (7 downto 0); 
 
         -- Execute Signals
-        signal IN_data               : std_logic_vector (15 downto 0);
+        signal Data_in_extended      : std_logic_vector (15 downto 0);
         signal Z_flag, N_flag        : std_logic;
         signal Moverflow_Flag        : std_logic;
     
@@ -524,14 +523,14 @@ begin
         vga_blue => vga_blue
     );
     ROM_inst   : ROM port map (
-        Reset    => Reset,      
+        Reset    => Rst_Global,      
         Clk      => Clk,           
         addr_A   => ROM_addra,
         Dout_A   => ROM_douta    
     );
     
     RAM_inst   : RAM port map (
-        Reset   => Reset,             
+        Reset   => Rst_Global,             
         Clk     => Clk,         
         addr_A  => RAM_addra,
         Dout_A  => RAM_douta,   
@@ -543,11 +542,11 @@ begin
      
     FetchStage : FETCH port map (
         Clk        => Clk,             
-        Reset_Ex   => Reset_Ex,    
-        Reset_Load => Reset_Load,                          
+        Reset_Ex   => Rst_Ex,    
+        Reset_Load => Rst_Load,                          
         BR_addr    => EX_MEM_BR_addr_Out,   
         BR_CTRL    => EX_MEM_BR_CTRL_Out,        
-        Test_en    => Test_En,
+        Test_en    => '0',
         IR_out     => IF_ID_IR_In,                   
         IR_in      => Instruction_in_sig,          
         PC_out     => PC_sig,         
@@ -558,7 +557,7 @@ begin
     
     Decoder : DECODE port map (
         Clk       => Clk, 
-        ID_Reset  => Reset,     
+        ID_Reset  => Rst_Global,     
         ID_IR_in  => IF_ID_IR_Out,
         WB_data   => ID_WB_data,
         WB_addr   => ID_WB_addr,
@@ -605,7 +604,7 @@ begin
         BR_addr_in  => ID_EX_BR_addr_Out,
         BR_addr_out => EX_MEM_BR_addr_In,
         BR_sub_PC   => ID_EX_BR_sub_PC_Out,
-        IN_data     => Data_In,      
+        IN_data     => Data_in_extended,      
         IN_En       => ID_EX_IN_En_Out,
         L_op_in     => ID_EX_L_op_out,
         L_op_out    => EX_MEM_L_op_in,
@@ -614,7 +613,7 @@ begin
     );
     
     WriteBackStage: WRITEBACK port map (
-        WB_Reset  => Reset,	        
+        WB_Reset  => Rst_Global,	        
         W_data    => MEM_WB_RW_data_Out,
         MEM_data  => MEM_WB_MEM_dout_Out, 
         W_addr    => MEM_WB_RW_addr_Out,         
@@ -625,8 +624,8 @@ begin
         WB_En     => ID_WB_En      
     );
         
-        --Clk_sig <= Clk;
-        Reset <= Rst;
+        -- Reset Handling
+        Rst_Global <= Rst_Ex or Rst_Load;
         --Instruction_in_sig <= IR_In_from_TB; 
         
         -- Tracking opcode & PC
@@ -636,6 +635,9 @@ begin
         -- ROM and RAM Port B for reading in Fetch
         ROM_addra <= PC_sig (5 downto 0);
         RAM_addrb <= PC_sig (8 downto 0);
+        
+        -- Input Output
+        Data_in_extended <= Data_In & "000000";
        
         
         
@@ -707,9 +709,9 @@ begin
            
     end process MEM;
     
-    IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Reset)
+    IF_ID : process (Clk, EX_MEM_BR_CTRL_Out, Rst_Global)
     begin
-        if Reset = '1' then
+        if Rst_Global = '1' then
             IF_ID_IR_Out <= (others => '0');
             IF_ID_PC_Out <= (others => '0');
             -- Tracking opcode & PC
@@ -729,12 +731,12 @@ begin
         end if;
     end process IF_ID;
 
-    ID_EX : process (Clk, EX_MEM_BR_CTRL_Out, Reset, ID_EX_ALU_op_In, 
+    ID_EX : process (Clk, EX_MEM_BR_CTRL_Out, Rst_Global, ID_EX_ALU_op_In, 
     ID_EX_Shiftamt_In, ID_EX_RA_data_In, ID_EX_RB_data_In, ID_EX_RW_addr_In, 
     ID_EX_RW_En_In, ID_EX_IN_En_In, ID_EX_Out_In, ID_EX_BR_En_In, ID_EX_BR_Op_In, 
     ID_EX_BR_addr_In, ID_EX_BR_sub_PC_In)
     begin
-        if Reset = '1' then
+        if Rst_Global = '1' then
             ID_EX_ALU_op_Out <= (others => '0');
             ID_EX_Shiftamt_Out <= (others => '0');
             ID_EX_RA_data_Out <= (others => '0');
@@ -786,7 +788,7 @@ begin
                 ID_EX_BR_sub_PC_Out <= ID_EX_BR_sub_PC_In;
                 ID_EX_L_op_Out <= ID_EX_L_op_In;
                 ID_EX_L_imm_Out <= ID_EX_L_imm_In;
-                Data_out <= Output_sig;
+                Data_out <= Output_sig(0);
                 -- Tracking opcode & PC
                 EX_OP_sig <= ID_OP_sig;
                 EX_PC_sig <= ID_PC_sig;
@@ -794,9 +796,9 @@ begin
         end if;
     end process ID_EX;
 
-    EX_MEM : process (EX_MEM_RW_data_In, EX_MEM_RW_addr_In, EX_MEM_RW_En_In, EX_MEM_BR_CTRL_Out, EX_MEM_BR_addr_In, Clk, Reset)
+    EX_MEM : process (EX_MEM_RW_data_In, EX_MEM_RW_addr_In, EX_MEM_RW_En_In, EX_MEM_BR_CTRL_Out, EX_MEM_BR_addr_In, Clk, Rst_Global)
     begin
-        if Reset = '1' then
+        if Rst_Global = '1' then
             EX_MEM_RW_data_Out <= (others => '0');
             EX_MEM_RW_addr_Out <= (others => '0');
             EX_MEM_RW_En_Out   <= '0';
@@ -833,9 +835,9 @@ begin
         end if;
     end process EX_MEM;
 
-    MEM_WB : process (Clk, MEM_WB_RW_data_In, MEM_WB_RW_addr_In, MEM_WB_RW_En_In, Reset)
+    MEM_WB : process (Clk, MEM_WB_RW_data_In, MEM_WB_RW_addr_In, MEM_WB_RW_En_In, Rst_Global)
     begin      
-        if Reset = '1' then
+        if Rst_Global = '1' then
             MEM_WB_RW_data_Out <= (others => '0');
             MEM_WB_MEM_dout_Out <= (others => '0');
             MEM_WB_RW_addr_Out <= (others => '0');
