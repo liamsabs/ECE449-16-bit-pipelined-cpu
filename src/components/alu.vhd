@@ -58,13 +58,23 @@ architecture behavioral of alu is
         nand16 : nand_16bit port map ( A => Input1, B => Input2, C => nandOut );
         multiplier : multiplier_16bit port map (A => Input1, B => Input2, Result_high => multupperOut, Result_low => multlowerOut);
         barrelshift : barrelshift_16bit port map (direction => bsdir , shiftamount => shiftAmt, A => Input1, ShiftedResult => barrelshiftOut );
-        bsdir <= (not ALU_op(1)) and ALU_op(0); -- evaluates to 1 for shift left opcode and 0 for right shift
         
-        -- Calculating Results 
-        Result <= addsubOut when (ALU_op = "001") or (ALU_op = "010") else
-                  multlowerOut when ALU_op = "011" else
-                  nandOut when ALU_op = "100" else
-                  barrelshiftOut when (ALU_op = "101") or (ALU_op = "110") else
-                  (others => '0');
-        Resultupper <= multupperout;
+        process (ALU_op, addsubOut, multlowerOut, nandOut, barrelshiftOut, multupperOut)
+        begin
+        -- Choose ALU Output
+        if ALU_op = "001" or ALU_op = "010" then
+            Result <= addsubOut;
+        elsif ALU_op = "011" then
+            Result <= multlowerOut;
+        elsif ALU_op = "100" then
+            Result <= nandOut;
+        elsif ALU_op = "101" or ALU_op = "110" then
+            Result <= barrelshiftOut;
+        else 
+            Result <= (others => '0');
+        end if;
+   
+        bsdir <= (not ALU_op(1)) and ALU_op(0); -- evaluates to 1 for shift left opcode and 0 for right shift
+        Resultupper <= multupperout; -- output upper results of multiplication
+        end process;
 end behavioral;

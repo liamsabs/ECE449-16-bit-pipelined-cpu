@@ -37,7 +37,7 @@ begin
       when "101" => reg_file(5) <= wr_data;
       when "110" => reg_file(6) <= wr_data;
       when "111" => reg_file(7) <= wr_data;
-      when others => NULL; end case;
+      end case;
     end if; 
     end if;
 end process;
