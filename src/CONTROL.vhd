@@ -661,10 +661,6 @@ begin
         Rst_Global <= Rst_Ex or Rst_Load;
         --Instruction_in_sig <= IR_In_from_TB; 
         
-        -- Tracking opcode & PC
-        IF_OP_sig <= IF_ID_IR_In;
-        IF_PC_sig <= PC_sig;
-        
         -- ROM and RAM Port B for reading in Fetch
         ROM_addra <= PC_sig (5 downto 0);
         RAM_addrb <= PC_sig (8 downto 0);
@@ -697,6 +693,11 @@ begin
     FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, EX_MEM_RW_data_Out,  
     MEM_WB_MEM_dout_In, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data, ID_A_addr, ID_B_addr)
     begin        
+            
+        -- Tracking opcode & PC
+        IF_OP_sig <= IF_ID_IR_In;
+        IF_PC_sig <= PC_sig;
+        
         -- Forwarding logic (A)
         if ID_EX_RW_addr_Out = ID_A_addr and ID_EX_RW_En_Out = '1'  then -- forward from Execute stage
             FW_A_En <= '1';
