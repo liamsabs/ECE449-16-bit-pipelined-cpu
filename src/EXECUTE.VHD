@@ -102,7 +102,7 @@ architecture Behavioral of EXECUTE is
                             N_sig <= '0';
                         end if;  
                     elsif ALU_op = "011" then
-                        if alu_result_upper = X"0000" or alu_result_upper = X"FFFF" then
+                        if alu_result_upper /= X"0000" and alu_result_upper /= X"1111"  then
                             Moverflow <= '1';
                         else 
                             Moverflow <= '0';
