@@ -422,6 +422,9 @@ architecture behavioral of CONTROL is
         signal R5                   : std_logic_vector (15 downto 0);
         signal R6                   : std_logic_vector (15 downto 0);
         signal R7                   : std_logic_vector (15 downto 0);
+
+        -- console signals
+        signal console_imm          : std_logic_vector (15 downto 0);
                   
 begin
     console_display : console
@@ -463,7 +466,7 @@ begin
         s3_reg_a_data => ID_EX_RW_addr_Out,
         s3_reg_b_data => ID_EX_RA_data_Out,
         s3_reg_c_data => ID_EX_RB_data_Out,
-        s3_immediate => ID_EX_In_EN_In,
+        s3_immediate => console_imm,
     
         s3_r_wb => ID_WB_addr,
         s3_r_wb_data => ID_WB_data,
@@ -669,7 +672,16 @@ begin
         Data_in_extended <= Data_In & "000000";
        
         
+    Console : process(console_imm, L_op_in)
+    begin
+        -- set immediate to 16-bit value
+        if L_op_in(0) = '0' then
+            console_imm <= "00000000" & L_imm;
+        else
+            console_imm <= L_imm & "00000000";
+        end if;
         
+    end process Console;    
    
     FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, EX_MEM_RW_data_Out,  
     MEM_WB_MEM_dout_In, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data, ID_A_addr, ID_B_addr)
