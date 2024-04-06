@@ -50,7 +50,7 @@ architecture Behavioral of EXECUTE is
             shiftAmt        : in std_logic_vector(3 downto 0);      -- Shift amount specified in A3 
             ALU_op          : in std_logic_vector(2 downto 0);      -- ALU op code from decode stage
             Result          : out std_logic_vector(15 downto 0);    -- ALU Result Output
-            Resultupper    : out std_logic_vector(15 downto 0)
+            Resultupper    : out std_logic_vector(15 downto 0):= (others => '0')
         );
     end component;
 
