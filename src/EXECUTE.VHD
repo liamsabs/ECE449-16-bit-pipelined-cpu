@@ -5,7 +5,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity EXECUTE is
     port (
-         Reset          : in std_logic;  -- Reset for flags
+         Reset          : in std_logic; -- Reset for flags
+         Clk            : in std_logic; -- Clk for latches 
          -- ALU Args
          ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
          shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
@@ -82,37 +83,43 @@ architecture Behavioral of EXECUTE is
         -- Memory Signals
         L_op_out <= L_op_in;
         RB_data_out <= RB_data;
+        
+        -- Flags Process
+        FLAGS : process (ALU_op, RA_data, ALU_Result_upper )
+        begin
+        if Reset = '1' then
+            Z_sig <= '0';
+            N_sig <= '0';
+            Moverflow <= '0';
+        elsif rising_edge(Clk) then
+            if ALU_op = "111" then
+             -- Zero Flag
+                if RA_data = X"0000" then
+                    Z_sig <= '1';
+                else
+                     Z_sig <= '0';
+                end if;
+                -- Negative Flag
+                if RA_data(15) = '1' then
+                    N_sig <= '1';
+                else
+                    N_sig <= '0';
+                end if;
+            elsif ALU_op = "011" then
+                if alu_result_upper /= X"0000" and alu_result_upper /= X"1111"  then
+                Moverflow <= '1';
+                else
+                Moverflow <= '0';
+                end if;
+            end if;
+        end if;
+        end process FLAGS;
                
-        -- Setting Flags
-        process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, L_op_in, L_imm)
+        -- Branch and Writeback process
+        process(Reset, Clk, ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, L_op_in, L_imm)
         begin 
             case BR_en is
                 when '0' =>
-                    -- Setting Flags
-                    if Reset = '1' then
-                        Z_sig <= '0';
-                        N_sig <= '0';
-                        Moverflow <= '0';
-                    elsif ALU_op = "111" then
-                        -- Zero Flag
-                        if RA_data = X"0000" then 
-                            Z_sig <= '1';
-                        else 
-                            Z_sig <= '0';
-                        end if;
-                        -- Negative Flag
-                        if RA_data(15) = '1' then 
-                            N_sig <= '1';
-                        else 
-                            N_sig <= '0';
-                        end if;  
-                    elsif ALU_op = "011" then
-                        if alu_result_upper /= X"0000" and alu_result_upper /= X"1111"  then
-                            Moverflow <= '1';
-                        else 
-                            Moverflow <= '0';
-                        end if;
-                    end if;
                     BR_CTRL <= '0'; -- set to no branching by default    
                 when '1' => -- branch instruction, check branch opcode 
                     case BR_op is

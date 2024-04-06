@@ -247,6 +247,7 @@ architecture behavioral of CONTROL is
     component EXECUTE is
         port (
                  Reset          : in std_logic;  -- Reset for flags
+                 Clk            : in std_logic; -- Clk for latches
                  -- ALU Args
                  ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
                  shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
@@ -376,8 +377,8 @@ architecture behavioral of CONTROL is
         signal EX_MEM_RW_addr_Out    : std_logic_vector (2 downto 0);
         signal EX_MEM_RW_En_In       : std_logic;
         signal EX_MEM_RW_En_Out      : std_logic;
-        signal EX_MEM_BR_CTRL_In     : std_logic;
-        signal EX_MEM_BR_CTRL_Out    : std_logic;
+        signal EX_MEM_BR_CTRL_In     : std_logic := '0';
+        signal EX_MEM_BR_CTRL_Out    : std_logic := '0';
         signal EX_MEM_BR_addr_In     : std_logic_vector (15 downto 0);
         signal EX_MEM_BR_addr_Out    : std_logic_vector (15 downto 0);
         signal EX_MEM_MEM_din_In     : std_logic_vector (15 downto 0); -- This is RB_data passed through the execute stage to be used as the data to write to memory
@@ -621,6 +622,7 @@ begin
     
     ExecuteStage : EXECUTE port map (
         Reset       => Rst_Global,
+        Clk         => Clk,
         ALU_op      => ID_EX_ALU_op_Out,     
         shiftAmt    => ID_EX_Shiftamt_Out,    
         RA_data     => ID_EX_RA_data_Out,   
