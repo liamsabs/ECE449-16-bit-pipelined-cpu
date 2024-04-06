@@ -438,16 +438,16 @@ begin
     --
     
         s2_pc => ID_PC_sig,
-        s2_inst => ID_OP_sig,
-    
-        s2_reg_a => "000",
-        s2_reg_b => "000",
-        s2_reg_c => "000",
-    
-        s2_reg_a_data => x"0000",
-        s2_reg_b_data => x"0000",
-        s2_reg_c_data => x"0000",
-        s2_immediate => x"0000",
+            s2_inst => ID_OP_sig,
+        
+            s2_reg_a => ID_OP_sig (8 downto 6),
+            s2_reg_b => ID_OP_sig (5 downto 3),
+            s2_reg_c => ID_OP_sig (2 downto 0),
+        
+            s2_reg_a_data => x"0000",
+            s2_reg_b_data => ID_EX_RA_data_In,
+            s2_reg_c_data => ID_EX_RB_data_In,
+            s2_immediate => ID_OP_sig (7 downto 0),
     
     --
     -- Stage 3 Execute
