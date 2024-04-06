@@ -662,8 +662,8 @@ begin
         --Instruction_in_sig <= IR_In_from_TB; 
         
         -- ROM and RAM Port B for reading in Fetch
-        ROM_addra <= PC_sig (5 downto 0);
-        RAM_addrb <= PC_sig (8 downto 0);
+        ROM_addra <= PC_sig (6 downto 1);
+        RAM_addrb <= PC_sig (9 downto 1);
         
         -- Input Output
         Data_in_extended <= Data_In & "000000";
@@ -770,7 +770,7 @@ begin
             -- Tracking opcode & PC
             ID_OP_sig <= (others => '0');
             ID_PC_sig <= (others => '0');
-        elsif falling_edge(Clk) then
+        elsif rising_edge(Clk) then
             if EX_MEM_BR_CTRL_Out = '1' then
                 IF_ID_IR_Out <= (others => '0');
                 IF_ID_PC_Out <= (others => '0');
@@ -807,7 +807,7 @@ begin
             -- Tracking opcode & PC
             EX_OP_sig <= (others => '0');
             EX_PC_sig <= (others => '0');
-        elsif falling_edge(Clk) then
+        elsif rising_edge(Clk) then
             if EX_MEM_BR_CTRL_Out = '1' then
                 ID_EX_ALU_op_Out <= (others => '0');
                 ID_EX_Shiftamt_Out <= (others => '0');
@@ -862,7 +862,7 @@ begin
             -- Tracking opcode & PC
             MEM_OP_sig <= (others => '0');
             MEM_PC_sig <= (others => '0');
-        elsif falling_edge(Clk) then
+        elsif rising_edge(Clk) then
             if EX_MEM_BR_CTRL_Out = '1' then
                 EX_MEM_RW_data_Out <= (others => '0');
                 EX_MEM_RW_addr_Out <= (others => '0');
@@ -899,7 +899,7 @@ begin
             -- Tracking opcode & PC
             WB_OP_sig <= (others => '0');
             WB_PC_sig <= (others => '0'); 
-        elsif falling_edge(Clk) then
+        elsif rising_edge(Clk) then
             MEM_WB_RW_data_Out <= MEM_WB_RW_data_In;
             MEM_WB_MEM_dout_Out <= MEM_WB_MEM_dout_In;
             MEM_WB_RW_addr_Out <= MEM_WB_RW_addr_In;

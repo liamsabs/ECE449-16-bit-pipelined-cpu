@@ -36,7 +36,6 @@ architecture behavioral of FETCH is
 
     begin      
         Add : FullAdder_16bit port map (A => PC, B=> X"0002", Cin => '0', Sum => adder_PC);
-        IR_out <= IR_in;
         PC_Out <= PC (15 downto 1) & '0';
         
         PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, Br_addr, IR_sig, clk)
@@ -53,7 +52,7 @@ architecture behavioral of FETCH is
                 NPC_var := adder_PC; -- PC incrementor
             end if;
             NPC_Out <= NPC_var;
-            if falling_edge(Clk) then
+            if rising_edge(Clk) then
                 PC <= NPC_var; 
             end if;    
         end process PC_process;
