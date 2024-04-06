@@ -424,7 +424,8 @@ architecture behavioral of CONTROL is
         signal R7                   : std_logic_vector (15 downto 0);
 
         -- console signals
-        signal console_imm          : std_logic_vector (15 downto 0);
+        signal ID_console_imm       : std_logic_vector (15 downto 0);
+        signal EX_console_imm       : std_logic_vector (15 downto 0);
                   
 begin
     console_display : console
@@ -450,7 +451,7 @@ begin
             s2_reg_a_data => x"0000",
             s2_reg_b_data => ID_EX_RA_data_In,
             s2_reg_c_data => ID_EX_RB_data_In,
-            s2_immediate => ID_OP_sig (7 downto 0),
+            s2_immediate => ID_console_imm,
     
     --
     -- Stage 3 Execute
@@ -463,23 +464,23 @@ begin
         s3_reg_b => EX_OP_sig(5 downto 3),
         s3_reg_c => EX_OP_sig(2 downto 0),
     
-        s3_reg_a_data => ID_EX_RW_addr_Out,
+        s3_reg_a_data => EX_MEM_RW_data_In,
         s3_reg_b_data => ID_EX_RA_data_Out,
         s3_reg_c_data => ID_EX_RB_data_Out,
-        s3_immediate => console_imm,
+        s3_immediate => EX_console_imm,
     
-        s3_r_wb => ID_WB_addr,
-        s3_r_wb_data => ID_WB_data,
+        s3_r_wb => ID_EX_RW_En_Out,
+        s3_r_wb_data => EX_MEM_RW_data_In,
     
         s3_br_wb => EX_MEM_BR_CTRL_In,
         s3_br_wb_address => EX_MEM_BR_addr_In,
     
-        s3_mr_wr => EX_MEM_RW_En_In,
-        s3_mr_wr_address => EX_MEM_RW_addr_In,
+        s3_mr_wr => RAM_wea(0),
+        s3_mr_wr_address => MEM_WB_RW_data_In,
         s3_mr_wr_data => EX_MEM_MEM_din_In,
     
         s3_mr_rd => EX_MEM_RW_En_In,
-        s3_mr_rd_address => EX_MEM_RW_addr_In,
+        s3_mr_rd_address => MEM_WB_RW_data_In,
     
     --
     -- Stage 4 Memory
@@ -487,9 +488,9 @@ begin
     
         s4_pc => MEM_PC_sig,
         s4_inst => MEM_OP_sig,
-        s4_reg_a => "000",
-        s4_r_wb => '0',
-        s4_r_wb_data => x"0000",
+        s4_reg_a => MEM_WB_RW_addr_In,
+        s4_r_wb => MEM_WB_RW_En_In,
+        s4_r_wb_data => MEM_WB_RW_data_In,
     
     --
     -- CPU registers
@@ -672,16 +673,26 @@ begin
         Data_in_extended <= Data_In & "000000";
        
         
-    Console : process(console_imm, L_op_in)
+    Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
     begin
-        -- set immediate to 16-bit value
-        if L_op_in(0) = '0' then
-            console_imm <= "00000000" & L_imm;
+        -- set immediate to 16-bit value for decode and fetch
+        if ID_EX_L_op_In = "010" then
+            ID_console_imm <= "00000000" & ID_OP_sig(7 downto 0);
+        elsif ID_EX_L_op_In = "011" then 
+            ID_console_imm <= ID_OP_sig (7 downto 0)& "00000000";
         else
-            console_imm <= L_imm & "00000000";
+            ID_console_imm <= (others => '0');    
         end if;
+        if ID_EX_L_op_Out = "010" then
+            EX_console_imm <= "00000000" & EX_OP_sig(7 downto 0);
+        elsif ID_EX_L_op_Out = "011" then 
+            EX_console_imm <= EX_OP_sig (7 downto 0)& "00000000";
+        else
+            EX_console_imm <= (others => '0');    
+        end if;
+
         
-    end process Console;    
+    end process Console_logic;    
    
     FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, EX_MEM_RW_data_Out,  
     MEM_WB_MEM_dout_In, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data, ID_A_addr, ID_B_addr)
