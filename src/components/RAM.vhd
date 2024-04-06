@@ -62,7 +62,7 @@ begin
         regcea         => '1',
         regceb         => '1',
         rsta           => Reset,
-        rstb           => Reset,
+        rstb           => '0',
         wea            => W_En_A
     );
 end behavioral;

@@ -43,18 +43,20 @@ architecture behavioral of FETCH is
         begin
            
             if Reset_Load = '1' then
-                NPC_var := X"0000"; -- to be changed [Location of ROM] 
+                PC <= X"0000"; -- to be changed [Location of ROM] 
             elsif Reset_Ex = '1' then
-                NPC_var := X"0400"; -- to be changed [location of RAM] 
-            elsif Br_CTRL = '1' then
-                NPC_var := BR_addr; -- branch address
+                PC <= X"0002"; -- to be changed [location of RAM]
             else 
-                NPC_var := adder_PC; -- PC incrementor
-            end if;
-            NPC_Out <= NPC_var;
-            if rising_edge(Clk) then
-                PC <= NPC_var; 
-            end if;    
+                if Br_CTRL = '1' then
+                    NPC_var := BR_addr; -- branch address
+                else 
+                    NPC_var := adder_PC; -- PC incrementor
+                end if;
+                NPC_Out <= NPC_var;
+                if rising_edge(Clk) then
+                    PC <= NPC_var; 
+                end if; 
+            end if;   
         end process PC_process;
     
         Memory_process : process (PC, IR_in, IR_RAM, IR_ROM, Test_EN)

@@ -49,7 +49,7 @@ begin
         injectdbiterra  => '0',
         injectsbiterra  => '0',
         regcea          => '1',
-        rsta            => Reset,
+        rsta            => '0',
         --sbiterra        => ,
         sleep           => '0'
     );   
