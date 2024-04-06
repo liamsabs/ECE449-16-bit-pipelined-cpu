@@ -9,12 +9,12 @@ entity RAM is
         Reset     : in std_logic;  
         Clk       : in std_logic;
         -- Port A       
-        addr_A    : in std_logic_vector(8 downto 0);
+        addr_A    : in std_logic_vector(9 downto 0);
         Dout_A    : out std_logic_vector(15 downto 0);
         Din_A     : in std_logic_vector(15 downto 0);
         W_En_A    : in std_logic_vector(0 downto 0); 
         -- Port B     
-        addr_B    : in std_logic_vector(8 downto 0);
+        addr_B    : in std_logic_vector(9 downto 0);
         Dout_B    : out std_logic_vector(15 downto 0)
     );
 end RAM;
@@ -26,9 +26,9 @@ begin
     -- Xilinx Parameterized Macro, version 2018.3
     xpm_memory_dpdistram_inst : xpm_memory_dpdistram
     generic map (
-        MEMORY_SIZE             => 8192, -- 1024 bytes block
+        MEMORY_SIZE             => 16384, -- 1024 bytes block
         CLOCKING_MODE           => "common_clock", -- DEFAULT VALUE
-        MEMORY_INIT_FILE        => "Test_FormatA_16Bit.mem", -- DEFAULT VALUE
+        MEMORY_INIT_FILE        => "formatB1.mem", -- DEFAULT VALUE
         MEMORY_INIT_PARAM       => "", -- DEFAULT VALUE
         USE_MEM_INIT            => 1,              --integer; 0,1
         MESSAGE_CONTROL         => 0,              --integer; 0,1
@@ -39,13 +39,13 @@ begin
         WRITE_DATA_WIDTH_A      => 16,             -- 16-bit data
         READ_DATA_WIDTH_A       => 16,             -- 16-bit data
         BYTE_WRITE_WIDTH_A      => 16,             -- 16-bit data
-        ADDR_WIDTH_A            => 9,             -- 16-bit addressing
+        ADDR_WIDTH_A            => 10,             -- 16-bit addressing
         READ_RESET_VALUE_A      => "0",            --string
         READ_LATENCY_A          => 1,              --non-negative integer
     
         -- Port B module generics
         READ_DATA_WIDTH_B       => 16,             --positive integer
-        ADDR_WIDTH_B            => 9,              --positive integer
+        ADDR_WIDTH_B            => 10,              --positive integer
         READ_RESET_VALUE_B      => "0",            --string
         READ_LATENCY_B          => 1               --non-negative integer
     )

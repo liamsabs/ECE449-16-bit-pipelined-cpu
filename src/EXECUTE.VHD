@@ -5,6 +5,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity EXECUTE is
     port (
+         Reset          : in std_logic;  -- Reset for flags
          -- ALU Args
          ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
          shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
@@ -88,7 +89,11 @@ architecture Behavioral of EXECUTE is
             case BR_en is
                 when '0' =>
                     -- Setting Flags
-                    if ALU_op = "111" then
+                    if Reset = '1' then
+                        Z_sig <= '0';
+                        N_sig <= '0';
+                        Moverflow <= '0';
+                    elsif ALU_op = "111" then
                         -- Zero Flag
                         if RA_data = X"0000" then 
                             Z_sig <= '1';

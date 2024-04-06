@@ -61,7 +61,7 @@ architecture behavioral of FETCH is
         begin
         if Test_En = '1' then
         IR_out <= IR_In;
-        elsif PC(10) = '1' then
+        elsif PC(11) = '1' then
         IR_out <= IR_RAM;
         else
         IR_out <= IR_ROM;

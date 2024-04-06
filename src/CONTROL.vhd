@@ -158,7 +158,7 @@ architecture behavioral of CONTROL is
             Reset     : in std_logic;  
             Clk       : in std_logic;
             -- Memory Interface Signals       
-            addr_A    : in std_logic_vector (5 downto 0);
+            addr_A    : in std_logic_vector (9 downto 0);
             Dout_A    : out std_logic_vector (15 downto 0)
         );
     end component;
@@ -168,12 +168,12 @@ architecture behavioral of CONTROL is
             Reset     : in std_logic;  
             Clk       : in std_logic;
             -- Port A       
-            addr_A    : in std_logic_vector(8 downto 0);
+            addr_A    : in std_logic_vector(9 downto 0);
             Dout_A    : out std_logic_vector(15 downto 0);
             Din_A     : in std_logic_vector(15 downto 0);
             W_En_A    : in std_logic_vector(0 downto 0); 
             -- Port B     
-            addr_B    : in std_logic_vector(8 downto 0);
+            addr_B    : in std_logic_vector(9 downto 0);
             Dout_B    : out std_logic_vector(15 downto 0)
         );
     end component;
@@ -246,7 +246,8 @@ architecture behavioral of CONTROL is
     -- Decode Component
     component EXECUTE is
         port (
-            -- ALU Args
+                 Reset          : in std_logic;  -- Reset for flags
+                 -- ALU Args
                  ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
                  shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
                  RA_data        : in std_logic_vector (15 downto 0);         -- Data for ALU A
@@ -313,12 +314,12 @@ architecture behavioral of CONTROL is
         signal WB_PC_sig             : std_logic_vector (15 downto 0); -- tracking PC for debugging
         
         -- ROM
-        signal ROM_addra             : std_logic_vector (5 downto 0);
+        signal ROM_addra             : std_logic_vector (9 downto 0);
         signal ROM_douta             : std_logic_vector (15 downto 0);
         
         -- RAM
-        signal RAM_addra             : std_logic_vector (8 downto 0);
-        signal RAM_addrb             : std_logic_vector (8 downto 0);
+        signal RAM_addra             : std_logic_vector (9 downto 0);
+        signal RAM_addrb             : std_logic_vector (9 downto 0);
         signal RAM_dina              : std_logic_vector (15 downto 0);
         signal RAM_douta             : std_logic_vector (15 downto 0);
         signal RAM_doutb             : std_logic_vector (15 downto 0);
@@ -619,6 +620,7 @@ begin
     );
     
     ExecuteStage : EXECUTE port map (
+        Reset       => Rst_Global,
         ALU_op      => ID_EX_ALU_op_Out,     
         shiftAmt    => ID_EX_Shiftamt_Out,    
         RA_data     => ID_EX_RA_data_Out,   
@@ -662,8 +664,8 @@ begin
         --Instruction_in_sig <= IR_In_from_TB; 
         
         -- ROM and RAM Port B for reading in Fetch
-        ROM_addra <= PC_sig (6 downto 1);
-        RAM_addrb <= PC_sig (9 downto 1);
+        ROM_addra <= PC_sig (10 downto 1);
+        RAM_addrb <= PC_sig (10 downto 1);
         
         -- Input Output
         Data_in_extended <= Data_In & "000000";
@@ -750,7 +752,7 @@ begin
         end if;
         
         -- output of EX/MEM latch into the RAM inputs
-        RAM_addra <= EX_MEM_RW_data_Out (8 downto 0); -- RA from Execute stage being used as memory address
+        RAM_addra <= EX_MEM_RW_data_Out (9 downto 0); -- RA from Execute stage being used as memory address
         RAM_dina  <= EX_MEM_MEM_din_Out; -- RB data going to RAM
         
         -- Routing signals between the interstage latches
