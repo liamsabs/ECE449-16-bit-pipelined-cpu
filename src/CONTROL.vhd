@@ -184,9 +184,7 @@ architecture behavioral of CONTROL is
             Reset_Ex       : in std_logic;
             Reset_Load     : in std_logic;                         -- Resets PC to [val?]
             Br_addr        : in std_logic_vector(15 downto 0);     -- Branch address
-            Br_CTRL        : in std_logic;                         -- input signal for PC MUX
-            Test_En        : in std_logic;                         -- used when we are testing in the Testbench [TO BE REMOVED]
-            IR_in          : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
+            Br_CTRL        : in std_logic;   -- determines of we take branch
             IR_out         : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
             PC_out         : out std_logic_vector(15 downto 0);     -- PC for decoder
             NPC_out        : out std_logic_vector (15 downto 0);
@@ -571,14 +569,12 @@ begin
         Reset_Ex   => Rst_Ex,    
         Reset_Load => Rst_Load,                          
         BR_addr    => EX_MEM_BR_addr_Out,   
-        BR_CTRL    => EX_MEM_BR_CTRL_Out,        
-        Test_en    => '0',
-        IR_out     => IF_ID_IR_In,                   
-        IR_in      => Instruction_in_sig,          
+        BR_CTRL    => EX_MEM_BR_CTRL_Out,
+        IR_out     => IF_ID_IR_In,         
         PC_out     => PC_sig,         
         NPC_out    => IF_ID_PC_In,         
-        IR_ROM     => RAM_doutb,          
-        IR_RAM     => ROM_douta      
+        IR_ROM     => ROM_douta,         
+        IR_RAM     => RAM_doutb       
     );
     
     Decoder : DECODE port map (
@@ -670,7 +666,7 @@ begin
         RAM_addrb <= PC_sig (10 downto 1);
         
         -- Input Output
-        Data_in_extended <= Data_In & "000000";
+        Data_in_extended <= "000000" & Data_In;
        
         
     Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
@@ -873,7 +869,7 @@ begin
                 EX_MEM_RW_En_Out   <= '0';
                 EX_MEM_BR_CTRL_Out <= '0';
                 EX_MEM_BR_addr_Out <= (others => '0');
-                EX_MEM_MEM_din_Out <= EX_MEM_MEM_din_In;
+                EX_MEM_MEM_din_Out <= (others => '0');
                 EX_MEM_L_op_Out <= (others => '0'); 
                 -- Tracking opcode & PC
                 MEM_OP_sig <= (others => '0');
