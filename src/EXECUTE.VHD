@@ -87,36 +87,36 @@ architecture Behavioral of EXECUTE is
         -- Flags Process
         FLAGS : process (ALU_op, RA_data, ALU_Result_upper )
         begin
-        if Reset = '1' then
-            Z_sig <= '0';
-            N_sig <= '0';
-            Moverflow <= '0';
-        elsif rising_edge(Clk) then
-            if ALU_op = "111" then
-             -- Zero Flag
-                if RA_data = X"0000" then
-                    Z_sig <= '1';
-                else
-                     Z_sig <= '0';
-                end if;
-                -- Negative Flag
-                if RA_data(15) = '1' then
-                    N_sig <= '1';
-                else
-                    N_sig <= '0';
-                end if;
-            elsif ALU_op = "011" then
-                if alu_result_upper /= X"0000" and alu_result_upper /= X"1111"  then
-                Moverflow <= '1';
-                else
+            if Reset = '1' then
+                Z_sig <= '0';
+                N_sig <= '0';
                 Moverflow <= '0';
+            elsif rising_edge(Clk) then
+                if ALU_op = "111" then
+                 -- Zero Flag
+                    if RA_data = X"0000" then
+                        Z_sig <= '1';
+                    else
+                         Z_sig <= '0';
+                    end if;
+                    -- Negative Flag
+                    if RA_data(15) = '1' then
+                        N_sig <= '1';
+                    else
+                        N_sig <= '0';
+                    end if;
+                elsif ALU_op = "011" then
+                    if alu_result_upper /= X"0000" and alu_result_upper /= X"1111"  then
+                    Moverflow <= '1';
+                    else
+                    Moverflow <= '0';
+                    end if;
                 end if;
             end if;
-        end if;
         end process FLAGS;
                
-        -- Branch and Writeback process
-        process(Reset, Clk, ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, L_op_in, L_imm)
+        -- Branch choice process
+        BRANCH : process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC)
         begin 
             case BR_en is
                 when '0' =>
@@ -139,27 +139,25 @@ architecture Behavioral of EXECUTE is
                             end if;
                     end case;
             end case;
-            
+        end process BRANCH;
+         
+        RW_DATA : process (BR_op, BR_sub_PC, IN_data, RA_data, L_imm, ALU_Result)
+        begin   
             -- WB/Mem Data choice
             if BR_op = "11" then -- BR_SUB
                 RW_data_out <= BR_sub_PC;
             elsif IN_En = '1' then -- In Instruction
-                RW_data_out <= IN_data;
-            else 
-                RW_data_out <= ALU_Result;
-            end if;
-            
-            if L_op_in(2) = '1' then                  -- LOAD / STORE
+                RW_data_out <= IN_data;      
+            elsif L_op_in = "100" or L_op_in = "101" or L_op_in = "001" then  -- LOAD / STORE or MOV
                 RW_data_out <= RA_data;
-            elsif L_op_in(2 downto 1) = "01" then     -- LOAD IMM
+            elsif L_op_in = "010" or L_op_in = "011" then     -- LOAD IMM
                 if L_op_in(0) = '0' then
                     RW_data_out <= RA_data(15 downto 8) & L_imm;
                 else
                     RW_data_out <= L_imm & RA_data(7 downto 0);
                 end if;
-            elsif L_op_in = "001" then
-                RW_data_out <= RA_data;                 -- MOV
+            else
+                RW_data_out <= ALU_Result;
             end if;
-            
-        end process;
+        end process RW_DATA;
 end Behavioral;

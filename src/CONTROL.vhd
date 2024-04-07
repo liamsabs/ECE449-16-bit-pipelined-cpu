@@ -9,7 +9,6 @@ entity CONTROL is
         Clk             : in std_logic;
         Rst_Ex          : in std_logic;
         Rst_Load        : in std_logic;
-        --IR_In_from_TB   : in std_logic_vector (15 downto 0);
         Data_In         : in std_logic_vector (9 downto 0);
         Data_Out        : out std_logic;
         Reset_button    : in std_logic;
@@ -519,7 +518,7 @@ begin
     --
         zero_flag => Z_flag,
         negative_flag => N_flag,
-        overflow_flag => Moverflow_Flag,
+        overflow_flag => Output_sig(0),
     
     --
     -- Debug screen enable
@@ -659,33 +658,32 @@ begin
         
         -- Reset Handling
         Rst_Global <= Rst_Ex or Rst_Load;
-        --Instruction_in_sig <= IR_In_from_TB; 
         
         -- ROM and RAM Port B for reading in Fetch
         ROM_addra <= PC_sig (10 downto 1);
         RAM_addrb <= PC_sig (10 downto 1);
         
         -- Input Output
-        Data_in_extended <= "000000" & Data_In;
+        Data_in_extended <= Data_In & "000000";
        
         
     Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
     begin
         -- set immediate to 16-bit value for decode and fetch
-        if ID_EX_L_op_In = "010" then
-            ID_console_imm <= "00000000" & ID_OP_sig(7 downto 0);
-        elsif ID_EX_L_op_In = "011" then 
-            ID_console_imm <= ID_OP_sig (7 downto 0)& "00000000";
-        else
-            ID_console_imm <= (others => '0');    
-        end if;
-        if ID_EX_L_op_Out = "010" then
+        --if ID_EX_L_op_In = "010" then
+            ID_console_imm <= "00000000" & ID_EX_L_imm_In;
+        --elsif ID_EX_L_op_In = "011" then 
+            --ID_console_imm <= ID_EX_L_imm_In & "00000000";
+        --else
+            --ID_console_imm <= (others => '0');    
+        --end if;
+        --if ID_EX_L_op_Out = "010" then
             EX_console_imm <= "00000000" & EX_OP_sig(7 downto 0);
-        elsif ID_EX_L_op_Out = "011" then 
-            EX_console_imm <= EX_OP_sig (7 downto 0)& "00000000";
-        else
-            EX_console_imm <= (others => '0');    
-        end if;
+        --elsif ID_EX_L_op_Out = "011" then 
+            --EX_console_imm <= EX_OP_sig (7 downto 0)& "00000000";
+        --else
+            --EX_console_imm <= (others => '0');    
+        --end if;
 
         
     end process Console_logic;    

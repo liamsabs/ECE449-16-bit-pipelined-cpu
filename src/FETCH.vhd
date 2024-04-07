@@ -8,7 +8,6 @@ entity FETCH is
         Reset_Load      : in std_logic;                         -- Resets PC to [val?]
         Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
         Br_CTRL         : in std_logic;                        -- used when we are testing in the Testbench [TO BE REMOVED]
-        IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
         IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
         PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
         NPC_out         : out std_logic_vector (15 downto 0);
@@ -42,9 +41,9 @@ architecture behavioral of FETCH is
         begin
            
             if Reset_Load = '1' then
-                PC <= X"0000"; -- to be changed [Location of ROM] 
+                PC <= X"0002"; -- to be changed [Location of ROM] 
             elsif Reset_Ex = '1' then
-                PC <= X"0210"; -- to be changed [location of RAM]
+                PC <= X"0000"; -- to be changed [location of RAM]
             else 
                 if Br_CTRL = '1' then
                     NPC_var := BR_addr; -- branch address
@@ -58,7 +57,7 @@ architecture behavioral of FETCH is
             end if;   
         end process PC_process;
     
-        Memory_process : process (PC, IR_in, IR_RAM, IR_ROM)
+        Memory_process : process (PC, IR_RAM, IR_ROM)
         begin
         if PC(11) = '1' then
         IR_out <= IR_RAM;

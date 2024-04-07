@@ -417,7 +417,7 @@ begin
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
                     L_op           <= "101";
-                when "0010010" => -- MOV
+                when "0010011" => -- MOV
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
                     RA_Addr_sig    <= ID_IR_in (5 downto 3);
@@ -431,7 +431,7 @@ begin
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
                     L_op           <= "001";
-                when "0010011" => -- LOADIMM
+                when "0010010" => -- LOADIMM
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
                     RA_Addr_sig    <= "111";

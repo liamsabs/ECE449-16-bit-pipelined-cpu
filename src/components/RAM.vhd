@@ -28,7 +28,7 @@ begin
     generic map (
         MEMORY_SIZE             => 16384, -- 1024 bytes block
         CLOCKING_MODE           => "common_clock", -- DEFAULT VALUE
-        MEMORY_INIT_FILE        => "formatB1.mem", -- DEFAULT VALUE
+        MEMORY_INIT_FILE        => "none", -- DEFAULT VALUE
         MEMORY_INIT_PARAM       => "", -- DEFAULT VALUE
         USE_MEM_INIT            => 1,              --integer; 0,1
         MESSAGE_CONTROL         => 0,              --integer; 0,1
