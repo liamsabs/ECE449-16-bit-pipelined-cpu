@@ -774,6 +774,9 @@ begin
             if EX_MEM_BR_CTRL_Out = '1' then
                 IF_ID_IR_Out <= (others => '0');
                 IF_ID_PC_Out <= (others => '0');
+                -- Tracking opcode & PC
+                ID_OP_sig <= (others => '0');
+                ID_PC_sig <= (others => '0');
             else
                 IF_ID_IR_Out <= IF_ID_IR_In;
                 IF_ID_PC_Out <= IF_ID_PC_In;
