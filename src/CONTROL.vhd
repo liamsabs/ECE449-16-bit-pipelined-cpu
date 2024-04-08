@@ -296,7 +296,6 @@ architecture behavioral of CONTROL is
         signal Rst_Global            : std_logic;
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
-        --signal Test_En               : std_logic; -- used for testing device
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         
         -- Tracking opcode and PC
@@ -386,8 +385,7 @@ architecture behavioral of CONTROL is
         -- MEM/WB
         signal MEM_WB_RW_data_In     : std_logic_vector (15 downto 0); -- this is data from execute stage
         signal MEM_WB_RW_data_Out    : std_logic_vector (15 downto 0);
-        signal MEM_WB_MEM_dout_In    : std_logic_vector (15 downto 0); -- this is data from memory stage
-        signal MEM_WB_MEM_dout_Out   : std_logic_vector (15 downto 0);
+        signal MEM_WB_MEM_dout       : std_logic_vector (15 downto 0); -- this is data from memory stage
         signal MEM_WB_RW_addr_In     : std_logic_vector (2 downto 0);
         signal MEM_WB_RW_addr_Out    : std_logic_vector (2 downto 0);
         signal MEM_WB_RW_En_In       : std_logic;
@@ -647,7 +645,7 @@ begin
     WriteBackStage: WRITEBACK port map (
         WB_Reset  => Rst_Global,	        
         W_data    => MEM_WB_RW_data_Out,
-        MEM_data  => MEM_WB_MEM_dout_Out, 
+        MEM_data  => MEM_WB_MEM_dout, 
         W_addr    => MEM_WB_RW_addr_Out,         
         W_En      => MEM_WB_RW_En_Out,
         L_op      => MEM_WB_L_op_Out,         
@@ -689,7 +687,7 @@ begin
     end process Console_logic;    
    
     FWD : process(ID_EX_RW_addr_Out, ID_EX_RW_En_Out, EX_MEM_RW_data_In, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out, EX_MEM_RW_data_Out,  
-    MEM_WB_MEM_dout_In, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data, ID_A_addr, ID_B_addr)
+    MEM_WB_MEM_dout, MEM_WB_RW_data_In, ID_WB_addr, ID_WB_En, ID_WB_data, ID_A_addr, ID_B_addr)
     begin        
             
         -- Tracking opcode & PC
@@ -704,7 +702,7 @@ begin
         elsif EX_MEM_RW_addr_Out = ID_A_addr and EX_MEM_RW_En_Out = '1' then -- Forward from Memory stage
             FW_A_En <= '1';
             if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
-                FW_A_data <= MEM_WB_MEM_dout_In;
+                FW_A_data <= MEM_WB_MEM_dout;
             else
                 FW_A_data <= EX_MEM_RW_data_Out;
             end if;     
@@ -724,7 +722,7 @@ begin
         elsif EX_MEM_RW_addr_Out = ID_B_addr and EX_MEM_RW_En_Out = '1' then -- Forward from Memory stage
             FW_B_En <= '1';
             if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
-                FW_B_data <= MEM_WB_MEM_dout_In;
+                FW_B_data <= MEM_WB_MEM_dout;
             else
                 FW_B_data <= EX_MEM_RW_data_Out;
             end if;     
@@ -753,7 +751,7 @@ begin
         
         -- Routing signals between the interstage latches
         MEM_WB_RW_data_In  <= EX_MEM_RW_data_Out; -- data from Execute stage
-        MEM_WB_MEM_dout_In <= RAM_douta; -- data from RAM
+        MEM_WB_MEM_dout    <= RAM_douta; -- data from RAM, isnt latched because memory is clocked too
         MEM_WB_RW_addr_In  <= EX_MEM_RW_addr_Out; -- address for writeback
         MEM_WB_RW_En_In    <= EX_MEM_RW_En_Out; -- enable for write back
         MEM_WB_L_op_In     <= EX_MEM_L_op_Out;
@@ -882,6 +880,7 @@ begin
                 EX_MEM_BR_CTRL_Out <= EX_MEM_BR_CTRL_In;
                 EX_MEM_BR_addr_Out <= EX_MEM_BR_addr_In;
                 EX_MEM_L_op_Out <= EX_MEM_L_op_In;
+                EX_MEM_MEM_din_Out <= EX_MEM_MEM_din_In;
                 -- Tracking opcode & PC
                 MEM_OP_sig <= EX_OP_sig;
                 MEM_PC_sig <= EX_PC_sig;
@@ -893,7 +892,6 @@ begin
     begin      
         if Rst_Global = '1' then
             MEM_WB_RW_data_Out <= (others => '0');
-            MEM_WB_MEM_dout_Out <= (others => '0');
             MEM_WB_RW_addr_Out <= (others => '0');
             MEM_WB_RW_En_Out <= '0';
             MEM_WB_L_op_Out <= (others => '0');
@@ -902,7 +900,6 @@ begin
             WB_PC_sig <= (others => '0'); 
         elsif rising_edge(Clk) then
             MEM_WB_RW_data_Out <= MEM_WB_RW_data_In;
-            MEM_WB_MEM_dout_Out <= MEM_WB_MEM_dout_In;
             MEM_WB_RW_addr_Out <= MEM_WB_RW_addr_In;
             MEM_WB_RW_En_Out <= MEM_WB_RW_En_In;
             MEM_WB_L_op_Out <= MEM_WB_L_op_In;

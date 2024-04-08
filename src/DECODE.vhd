@@ -417,20 +417,6 @@ begin
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
                     L_op           <= "101";
-                when "0010011" => -- MOV
-                    ALU_op         <= (others => '0');
-                    shiftAmt       <= (others => '0');
-                    RA_Addr_sig    <= ID_IR_in (5 downto 3);
-                    RB_Addr_sig    <= (others => '0');
-                    RW_addr        <= ID_IR_in (8 downto 6);
-                    RW_En          <= '1';
-                    In_En          <= '0';
-                    BR_En          <= '0';
-                    BR_Op          <= "00";
-                    BR_operand1    <= (others=>'0');
-                    BR_operand2    <= (others=>'0');
-                    BR_addr        <= (others=>'0');
-                    L_op           <= "001";
                 when "0010010" => -- LOADIMM
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
@@ -444,7 +430,21 @@ begin
                     BR_operand1    <= (others=>'0');
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
-                    L_op           <= "01" & ID_IR_in(8);  
+                    L_op           <= "01" & ID_IR_in(8);
+                when "0010011" => -- MOV
+                    ALU_op         <= (others => '0');
+                    shiftAmt       <= (others => '0');
+                    RA_Addr_sig    <= ID_IR_in (5 downto 3);
+                    RB_Addr_sig    <= (others => '0');
+                    RW_addr        <= ID_IR_in (8 downto 6);
+                    RW_En          <= '1';
+                    In_En          <= '0';
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others=>'0');
+                    BR_operand2    <= (others=>'0');
+                    BR_addr        <= (others=>'0');
+                    L_op           <= "001";  
                 when others => 
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');

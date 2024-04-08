@@ -23,7 +23,7 @@ begin
             WB_data <= (others => '0');
             WB_addr <= (others => '0');
             WB_En   <= '0';   
-        elsif L_op = "001" then
+        elsif L_op = "100" then -- In the case of a load command, write back memory data instead
             WB_data <= MEM_data;
             WB_addr <= W_addr;
             WB_En <= W_En;

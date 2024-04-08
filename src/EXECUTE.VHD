@@ -33,9 +33,9 @@ entity EXECUTE is
          IN_data        : in std_logic_vector (15 downto 0);
          IN_En          : in std_logic;
          -- Memory
-         L_op_in      : in std_logic_vector (2 downto 0);
-         L_op_out     : out std_logic_vector (2 downto 0);
-         L_imm        : in std_logic_vector (7 downto 0);
+         L_op_in        : in std_logic_vector (2 downto 0);
+         L_op_out       : out std_logic_vector (2 downto 0);
+         L_imm          : in std_logic_vector (7 downto 0);
          RB_data_out    : out std_logic_vector (15 downto 0)
 
      );
