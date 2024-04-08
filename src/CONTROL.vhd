@@ -9,7 +9,9 @@ entity CONTROL is
         Clk             : in std_logic;
         Rst_Ex          : in std_logic;
         Rst_Load        : in std_logic;
-        Data_In         : in std_logic_vector (9 downto 0);
+        --Data_In         : in std_logic_vector (9 downto 0);
+        Switch_In       : in std_logic_vector (14 downto 0);
+        PMOD_In         : in std_logic_vector (9 downto 0);
         Data_Out        : out std_logic;
         Reset_button    : in std_logic;
         debug_console   : in STD_LOGIC;
@@ -297,6 +299,7 @@ architecture behavioral of CONTROL is
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
+        signal Data_In               : std_logic_vector (9 downto 0);
         
         -- Tracking opcode and PC
         signal IF_OP_sig             : std_logic_vector (15 downto 0); -- tracking OPCODE for debugging
@@ -666,6 +669,16 @@ begin
         -- Input Output
         Data_in_extended <= Data_In & "000000";
        
+    Input_Data  : process (Switch_In, PMOD_In)
+    begin
+        
+           if Switch_In(14) = '1' then
+                Data_In <= Switch_In (9 downto 0);
+           else
+                Data_In <= PMOD_In;
+           end if;
+        
+    end process Input_Data;
         
     Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
     begin
