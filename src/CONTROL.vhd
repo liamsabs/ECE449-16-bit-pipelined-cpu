@@ -423,6 +423,8 @@ architecture behavioral of CONTROL is
         -- console signals
         signal ID_console_imm       : std_logic_vector (15 downto 0);
         signal EX_console_imm       : std_logic_vector (15 downto 0);
+        signal EX_MEM_WR            : std_logic;
+        signal EX_MEM_RD            : std_logic;
                   
 begin
     console_display : console
@@ -472,8 +474,8 @@ begin
         s3_br_wb => EX_MEM_BR_CTRL_In,
         s3_br_wb_address => EX_MEM_BR_addr_In,
     
-        s3_mr_wr => RAM_wea(0),
-        s3_mr_wr_address => MEM_WB_RW_data_In,
+        s3_mr_wr => EX_MEM_WR,
+        s3_mr_wr_address => EX_MEM_RW_data_In,
         s3_mr_wr_data => EX_MEM_MEM_din_In,
     
         s3_mr_rd => EX_MEM_RW_En_In,
@@ -667,7 +669,7 @@ begin
         
     Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
     begin
-        -- set immediate to 16-bit value for decode and fetch
+        --set immediate to 16-bit value for decode and fetch
         --if ID_EX_L_op_In = "010" then
             ID_console_imm <= "00000000" & ID_EX_L_imm_In;
         --elsif ID_EX_L_op_In = "011" then 
@@ -739,11 +741,22 @@ begin
     MEM : process (EX_MEM_L_op_Out, EX_MEM_RW_data_Out, EX_MEM_MEM_din_Out, EX_MEM_RW_data_Out, RAM_douta, EX_MEM_RW_addr_Out, EX_MEM_RW_En_Out, EX_MEM_L_op_Out) -- to add Memory stage logic
     begin
         -- determine if we can set write memory Enable
-        if EX_MEM_L_op_Out = "101" then
-            RAM_wea <= "1";
+        if EX_MEM_L_op_Out = "101" then -- store
+            RAM_wea(0) <= '1';
         else 
-            RAM_wea <= "0";
+            RAM_wea(0) <= '0';
         end if;
+        
+        if EX_MEM_L_op_In = "101" then -- set for store on console
+            EX_MEM_WR <= '1';
+            EX_MEM_RD <= '0';
+        elsif EX_MEM_L_op_In = "100" then -- set for load on console
+            EX_MEM_WR <= '1';
+            EX_MEM_RD <= '0';
+        else
+            EX_MEM_WR <= '0';
+            EX_MEM_RD <= '0';
+        end if;    
         
         -- output of EX/MEM latch into the RAM inputs
         RAM_addra <= EX_MEM_RW_data_Out (9 downto 0); -- RA from Execute stage being used as memory address
