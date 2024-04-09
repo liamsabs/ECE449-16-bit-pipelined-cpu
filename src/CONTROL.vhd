@@ -181,17 +181,17 @@ architecture behavioral of CONTROL is
     -- FETCH Component
     component FETCH is
         port(
-            Clk            : in std_logic;
-            Reset_Ex       : in std_logic;
-            Reset_Load     : in std_logic;                         -- Resets PC to [val?]
-            Br_addr        : in std_logic_vector(15 downto 0);     -- Branch address
-            Br_CTRL        : in std_logic;   -- determines of we take branch
-            IR_out         : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
-            PC_out         : out std_logic_vector(15 downto 0);     -- PC for decoder
-            NPC_out        : out std_logic_vector (15 downto 0);
-            IR_ROM         : in std_logic_vector (15 downto 0);
-            IR_RAM         : in std_logic_vector (15 downto 0)
-            
+            Clk             : in std_logic;
+                Reset_Ex        : in std_logic;
+                Reset_Load      : in std_logic;                         -- Resets PC to [val?]
+                Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
+                Br_CTRL         : in std_logic;                        -- used when we are testing in the Testbench [TO BE REMOVED]
+                IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
+                PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
+                NPC_out         : out std_logic_vector (15 downto 0);
+                IR_ROM          : in std_logic_vector (15 downto 0);
+                IR_RAM          : in std_logic_vector (15 downto 0);
+                Call_NOP        : in std_logic
         );
     end component;
     -- Decode Component
@@ -300,6 +300,7 @@ architecture behavioral of CONTROL is
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         signal Data_In               : std_logic_vector (9 downto 0);
+        signal Bubble_sig            : std_logic;
         
         -- Tracking opcode and PC
         signal IF_OP_sig             : std_logic_vector (15 downto 0); -- tracking OPCODE for debugging
@@ -576,7 +577,8 @@ begin
         PC_out     => PC_sig,         
         NPC_out    => IF_ID_PC_In,         
         IR_ROM     => ROM_douta,         
-        IR_RAM     => RAM_doutb       
+        IR_RAM     => RAM_doutb,
+        Call_NOP   => Bubble_sig       
     );
     
     Decoder : DECODE port map (
@@ -667,11 +669,21 @@ begin
         RAM_addrb <= PC_sig (10 downto 1);
         
         -- Input Output
-        Data_in_extended <= Data_In & "000000";
+
+    
+    Bubble_Process : process (ID_EX_L_Op_In, EX_MEM_L_Op_In)
+    begin
+    
+    if (ID_EX_L_Op_In = "100" OR EX_MEM_L_Op_In = "100") then
+            Bubble_sig <= '1';
+    else
+            Bubble_sig <= '0';
+    end if;
+    
+    end process Bubble_Process;
        
     Input_Data  : process (Switch_In, PMOD_In)
     begin
-        
            if Switch_In(14) = '1' then
                 Data_In <= Switch_In (9 downto 0);
            else
@@ -679,6 +691,9 @@ begin
            end if;
         
     end process Input_Data;
+    
+    Data_in_extended <= Data_In & "000000";
+
         
     Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
     begin
@@ -800,11 +815,19 @@ begin
                 ID_OP_sig <= (others => '0');
                 ID_PC_sig <= (others => '0');
             else
-                IF_ID_IR_Out <= IF_ID_IR_In;
-                IF_ID_PC_Out <= IF_ID_PC_In;
-                -- Tracking opcode & PC
-                ID_OP_sig <= IF_OP_sig;
-                ID_PC_sig <= IF_PC_sig;
+                if ID_EX_L_Op_In = "100" OR EX_MEM_L_Op_In = "100" then
+                    IF_ID_IR_Out <= (others => '0');
+                    IF_ID_PC_Out <= (others => '0');
+                    -- Tracking opcode & PC
+                    ID_OP_sig <= (others => '0');
+                    ID_PC_sig <= (others => '0');
+                else
+                    IF_ID_IR_Out <= IF_ID_IR_In;
+                    IF_ID_PC_Out <= IF_ID_PC_In;
+                    -- Tracking opcode & PC
+                    ID_OP_sig <= IF_OP_sig;
+                    ID_PC_sig <= IF_PC_sig;
+                end if;
             end if;
         end if;
     end process IF_ID;

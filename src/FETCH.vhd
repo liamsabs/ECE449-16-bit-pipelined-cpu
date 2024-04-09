@@ -12,7 +12,8 @@ entity FETCH is
         PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
         NPC_out         : out std_logic_vector (15 downto 0);
         IR_ROM          : in std_logic_vector (15 downto 0);
-        IR_RAM          : in std_logic_vector (15 downto 0)
+        IR_RAM          : in std_logic_vector (15 downto 0);
+        Call_NOP        : in std_logic
         
     );
 end FETCH;
@@ -36,7 +37,7 @@ architecture behavioral of FETCH is
         Add : FullAdder_16bit port map (A => PC, B=> X"0002", Cin => '0', Sum => adder_PC);
         PC_Out <= PC (15 downto 1) & '0';
         
-        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, Br_addr, IR_sig, clk)
+        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, Br_addr, IR_sig, clk, Call_NOP)
             variable NPC_var : std_logic_vector(15 downto 0);
         begin
            
@@ -47,6 +48,8 @@ architecture behavioral of FETCH is
             else 
                 if Br_CTRL = '1' then
                     NPC_var := BR_addr; -- branch address
+                elsif Call_NOP = '1' then
+                    NPC_var := PC;
                 else 
                     NPC_var := adder_PC; -- PC incrementor
                 end if;
