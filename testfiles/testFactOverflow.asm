@@ -7,9 +7,7 @@
 ; Please modify the code to use the overflow test you implemented
 
 
-ORG 0x500
-.DATA
-.CODE
+ORG 0x810
 START:
 
 	LOADIMM.upper	0x00

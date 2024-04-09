@@ -5,8 +5,7 @@
 
 
 
-ORG 0x210
-.CODE
+ORG 0x810
 START:
 
 		LOADIMM.upper	0x00

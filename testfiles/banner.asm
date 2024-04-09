@@ -5,7 +5,7 @@ Console:        equ             0xFC00
 
 ;.DATA
 ;.CODE
-		org		0x456
+		org		0x810
 start:		loadimm.upper   0x00
                 loadimm.lower   0x01
                 mov             r1,r7

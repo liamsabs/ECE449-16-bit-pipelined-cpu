@@ -1,9 +1,9 @@
 LedDisplay:	equ		0xFFF2
 DipSwitches:	equ		0xFFF0
-DipSwitchMask:	equ		07			; Binary multiple as a mask
+DipSwitchMask:	equ		0x07			; Binary multiple as a mask
 
 
-		org		0x428
+		org		0x810
 main:		loadimm.upper	DipSwitches.hi
 		loadimm.lower	DipSwitches.lo
 		load		r6, r7
