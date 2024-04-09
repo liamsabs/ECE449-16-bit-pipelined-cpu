@@ -787,7 +787,7 @@ begin
         end if;    
         
         -- output of EX/MEM latch into the RAM inputs
-        RAM_addra <= EX_MEM_RW_data_Out (9 downto 0); -- RA from Execute stage being used as memory address
+        RAM_addra <= EX_MEM_RW_data_Out (10 downto 1); -- RA from Execute stage being used as memory address
         RAM_dina  <= EX_MEM_MEM_din_Out; -- RB data going to RAM
         
         -- Routing signals between the interstage latches
