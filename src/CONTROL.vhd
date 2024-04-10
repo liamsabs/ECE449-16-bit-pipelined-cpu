@@ -299,7 +299,6 @@ architecture behavioral of CONTROL is
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
-        signal Data_In               : std_logic_vector (9 downto 0);
         signal Bubble_sig            : std_logic;
         
         -- Tracking opcode and PC
@@ -685,14 +684,12 @@ begin
     Input_Data  : process (Switch_In, PMOD_In)
     begin
            if Switch_In(14) = '1' then
-                Data_In <= Switch_In (9 downto 0);
+                Data_in_extended <= "000000" & Switch_In (9 downto 0);
            else
-                Data_In <= PMOD_In;
+                Data_in_extended <= PMOD_In & "000000";
            end if;
         
     end process Input_Data;
-    
-    Data_in_extended <= Data_In & "000000";
 
         
     Console_Logic : process(ID_console_imm, EX_console_imm, ID_EX_L_op_In, ID_EX_L_op_Out)
@@ -835,7 +832,7 @@ begin
     ID_EX : process (Clk, EX_MEM_BR_CTRL_Out, Rst_Global, ID_EX_ALU_op_In, 
     ID_EX_Shiftamt_In, ID_EX_RA_data_In, ID_EX_RB_data_In, ID_EX_RW_addr_In, 
     ID_EX_RW_En_In, ID_EX_IN_En_In, ID_EX_Out_In, ID_EX_BR_En_In, ID_EX_BR_Op_In, 
-    ID_EX_BR_addr_In, ID_EX_BR_sub_PC_In)
+    ID_EX_BR_addr_In, ID_EX_BR_sub_PC_In, Output_sig)
     begin
         if Rst_Global = '1' then
             ID_EX_ALU_op_Out <= (others => '0');
@@ -889,11 +886,11 @@ begin
                 ID_EX_BR_sub_PC_Out <= ID_EX_BR_sub_PC_In;
                 ID_EX_L_op_Out <= ID_EX_L_op_In;
                 ID_EX_L_imm_Out <= ID_EX_L_imm_In;
-                Data_out <= Output_sig(0);
                 -- Tracking opcode & PC
                 EX_OP_sig <= ID_OP_sig;
                 EX_PC_sig <= ID_PC_sig;
-            end if; 
+            end if;
+                Data_out <= Output_sig(0); 
         end if;
     end process ID_EX;
 
