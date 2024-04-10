@@ -37,7 +37,7 @@ begin
         READ_DATA_WIDTH_A       => 16,              --positive integer
         ADDR_WIDTH_A            => 10,              --positive integer
         READ_RESET_VALUE_A      => "0",             --string
-        READ_LATENCY_A          => 0                --non-negative integer
+        READ_LATENCY_A          => 1                --non-negative integer
     )
         
     port map (

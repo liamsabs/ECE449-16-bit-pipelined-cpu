@@ -182,16 +182,16 @@ architecture behavioral of CONTROL is
     component FETCH is
         port(
             Clk             : in std_logic;
-                Reset_Ex        : in std_logic;
-                Reset_Load      : in std_logic;                         -- Resets PC to [val?]
-                Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
-                Br_CTRL         : in std_logic;                        -- used when we are testing in the Testbench [TO BE REMOVED]
-                IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
-                PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
-                NPC_out         : out std_logic_vector (15 downto 0);
-                IR_ROM          : in std_logic_vector (15 downto 0);
-                IR_RAM          : in std_logic_vector (15 downto 0);
-                Call_NOP        : in std_logic
+            Reset_Ex        : in std_logic;
+            Reset_Load      : in std_logic;                         -- Resets PC to [val?]
+            Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
+            Br_CTRL         : in std_logic;                        -- used when we are testing in the Testbench [TO BE REMOVED]
+            IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
+            PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
+            NPC_out         : out std_logic_vector (15 downto 0);
+            IR_ROM          : in std_logic_vector (15 downto 0);
+            IR_RAM          : in std_logic_vector (15 downto 0);
+            Call_NOP        : in std_logic
         );
     end component;
     -- Decode Component
@@ -298,6 +298,7 @@ architecture behavioral of CONTROL is
         signal Rst_Global            : std_logic;
         signal Output_sig            : std_logic_vector (15 downto 0);
         signal Instruction_in_sig    : std_logic_vector (15 downto 0);
+        signal NPC_sig               : std_logic_vector (15 downto 0);
         signal PC_sig                : std_logic_vector (15 downto 0); -- used to keep track of PC for testing
         signal Bubble_sig            : std_logic;
         
@@ -436,7 +437,7 @@ begin
     --
     -- Stage 1 Fetch
     --
-        s1_pc => IF_PC_sig,
+        s1_pc => IF_ID_PC_In,
         s1_inst => IF_OP_sig,
     
     --
@@ -573,8 +574,8 @@ begin
         BR_addr    => EX_MEM_BR_addr_Out,   
         BR_CTRL    => EX_MEM_BR_CTRL_Out,
         IR_out     => IF_ID_IR_In,         
-        PC_out     => PC_sig,         
-        NPC_out    => IF_ID_PC_In,         
+        PC_out     => IF_ID_PC_In,         
+        NPC_out    => NPC_sig,         
         IR_ROM     => ROM_douta,         
         IR_RAM     => RAM_doutb,
         Call_NOP   => Bubble_sig       
@@ -664,10 +665,8 @@ begin
         Rst_Global <= Rst_Ex or Rst_Load;
         
         -- ROM and RAM Port B for reading in Fetch
-        ROM_addra <= PC_sig (10 downto 1);
-        RAM_addrb <= PC_sig (10 downto 1);
-        
-        -- Input Output
+        ROM_addra <= NPC_sig (10 downto 1);
+        RAM_addrb <= NPC_sig (10 downto 1);
 
     
     Bubble_Process : process (ID_EX_L_Op_In, EX_MEM_L_Op_In)
@@ -728,11 +727,7 @@ begin
             
         elsif EX_MEM_RW_addr_Out = ID_A_addr and EX_MEM_RW_En_Out = '1' then -- Forward from Memory stage
             FW_A_En <= '1';
-            if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
-                FW_A_data <= MEM_WB_MEM_dout;
-            else
-                FW_A_data <= EX_MEM_RW_data_Out;
-            end if;     
+            FW_A_data <= EX_MEM_RW_data_Out;     
         elsif ID_WB_addr = ID_A_addr and ID_WB_En = '1' then -- Forward from Writeback stage
             FW_A_En <= '1';
             FW_A_data <= ID_WB_data;
@@ -744,15 +739,10 @@ begin
         -- Forwarding logic (B)
         if ID_EX_RW_addr_Out = ID_B_addr and ID_EX_RW_En_Out = '1'  then -- forward from Execute stage
             FW_B_En <= '1';
-            FW_B_data <= EX_MEM_RW_data_In;
-            
+            FW_B_data <= EX_MEM_RW_data_In;   
         elsif EX_MEM_RW_addr_Out = ID_B_addr and EX_MEM_RW_En_Out = '1' then -- Forward from Memory stage
             FW_B_En <= '1';
-            if EX_MEM_L_op_Out = "100" then -- load so forward memory dout instead
-                FW_B_data <= MEM_WB_MEM_dout;
-            else
-                FW_B_data <= EX_MEM_RW_data_Out;
-            end if;     
+            FW_B_data <= EX_MEM_RW_data_Out;   
         elsif ID_WB_addr = ID_B_addr and ID_WB_En = '1' then -- Forward from Writeback stage
             FW_B_En <= '1';
             FW_B_data <= ID_WB_data;
@@ -823,7 +813,7 @@ begin
                     IF_ID_PC_Out <= IF_ID_PC_In;
                     -- Tracking opcode & PC
                     ID_OP_sig <= IF_OP_sig;
-                    ID_PC_sig <= IF_PC_sig;
+                    ID_PC_sig <= IF_ID_PC_In;
                 end if;
             end if;
         end if;

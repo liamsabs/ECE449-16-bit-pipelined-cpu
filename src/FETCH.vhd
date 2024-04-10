@@ -31,33 +31,33 @@ architecture behavioral of FETCH is
 
     signal PC       : std_logic_vector (15 downto 0) := (others => '0');    -- program counter
     signal IR_sig   : std_logic_vector (15 downto 0) := (others => '0');    -- instruction register
-    signal adder_PC : std_logic_vector (15 downto 0) := (others => '0');    -- regular PC incremented with adder    
+    signal adder_NPC : std_logic_vector (15 downto 0) := (others => '0');    -- regular PC incremented with adder    
 
     begin      
-        Add : FullAdder_16bit port map (A => PC, B=> X"0002", Cin => '0', Sum => adder_PC);
+        Add : FullAdder_16bit port map (A => PC, B=> X"0002", Cin => '0', Sum => adder_NPC);
         PC_Out <= PC (15 downto 1) & '0';
         
-        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, Br_addr, IR_sig, clk, Call_NOP)
+        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_NPC, Br_addr, IR_sig, clk, Call_NOP)
             variable NPC_var : std_logic_vector(15 downto 0);
         begin
            
             if Reset_Load = '1' then
-                PC <= X"0002"; -- to be changed [Location of ROM] 
+                NPC_var := X"0002"; -- to be changed [Location of ROM] 
             elsif Reset_Ex = '1' then
-                PC <= X"0000"; -- to be changed [location of RAM]
+                NPC_var := X"0000"; -- to be changed [location of RAM]
+            elsif Call_NOP = '1' then
+                NPC_var := PC;
+            elsif Br_CTRL = '1' then
+                 NPC_var := BR_addr; -- branch address
             else 
-                if Br_CTRL = '1' then
-                    NPC_var := BR_addr; -- branch address
-                elsif Call_NOP = '1' then
-                    NPC_var := PC;
-                else 
-                    NPC_var := adder_PC; -- PC incrementor
-                end if;
-                NPC_Out <= NPC_var;
-                if rising_edge(Clk) then
+                 NPC_var := adder_NPC; -- PC incrementor
+            end if;
+                NPC_Out <= NPC_var(15 downto 1) & '0';
+                
+             if rising_edge(Clk) then -- setting new PC value
                     PC <= NPC_var; 
-                end if; 
-            end if;   
+             end if; 
+            
         end process PC_process;
     
         Memory_process : process (PC, IR_RAM, IR_ROM)

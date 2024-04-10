@@ -107,7 +107,7 @@ signal RB_data_sig        :  std_logic_vector (15 downto 0); -- RB data from reg
 signal RB_data_sig_FW     :  std_logic_vector (15 downto 0); -- RB data with forwarding logic applied
 signal RB_addr_sig        :  std_logic_vector (2 downto 0); -- RB address inputted to register file and outputted for forwarding
 -- Branching Signals
-signal PC_dec_sig         : std_logic_vector (15 downto 0); -- signal representing PC where 2 been subtracted
+signal PC_incr_sig         : std_logic_vector (15 downto 0); -- signal representing PC where 2 been subtracted
 signal disp1_sig          : std_logic_vector (8 downto 0); -- bits from IR for disp1 to be formatted
 signal disp1formatted_sig : std_logic_vector (15 downto 0); -- disp1 post formatting (sign extended to 16 bits)
 signal disps_sig          : std_logic_vector (5 downto 0); -- bits from IR for disps to be formatted
@@ -145,11 +145,11 @@ begin
         disps => disps_sig,
         dispsformatted => dispsformatted_sig
     );
-    PC_dec : FullAdder_16bit port map ( -- adder used to decrement PC when used for branching
+    PC_incr : FullAdder_16bit port map ( -- adder so BR SUB stores PC+2 instead of PC
         A => PC,
-        B => X"FFFE", -- add -2 so that PC instead of PC+2
+        B => X"0002", -- add -
         Cin => '0',
-        Sum => PC_dec_sig
+        Sum => PC_incr_sig
     );
     B_adder : FullAdder_16bit port map ( -- adder used to compute branch address
         A => BR_operand1,
@@ -166,14 +166,14 @@ begin
     RA_addr <= RA_addr_sig;
     RB_addr <= RB_addr_sig;           
     -- Branching signal Assignment
-    BR_sub_PC <= PC; 
+    BR_sub_PC <= PC_incr_sig; 
     -- Branch Formatting
     disp1_sig <= ID_IR_in (8 downto 0);
     disps_sig <= ID_IR_in (5 downto 0);
     -- Immediate Value
     L_imm    <= ID_IR_in (7 downto 0);
     
-    decode_process : process (ID_Reset, opCode, ID_IR_in, RA_data_sig_FW, PC_dec_sig, disp1formatted_sig, BR_Adder_sig, dispsformatted_sig, BR_operand1, BR_operand2)
+    decode_process : process (ID_Reset, opCode, ID_IR_in, RA_data_sig_FW, PC_incr_sig, disp1formatted_sig, BR_Adder_sig, dispsformatted_sig, BR_operand1, BR_operand2)
     begin
         if ID_Reset = '1' then
             ALU_op         <= (others => '0');
@@ -287,7 +287,7 @@ begin
                     IN_En          <= '0';
                     BR_En          <= '1';
                     BR_Op          <= "00";
-                    BR_operand1    <= PC_dec_sig;
+                    BR_operand1    <= PC;
                     BR_operand2    <= disp1formatted_sig;
                     BR_addr        <= BR_Adder_sig;
                     L_op           <= (others => '0');
@@ -301,7 +301,7 @@ begin
                     In_En          <= '0';                   
                     BR_En          <= '1';
                     BR_Op          <= "10";
-                    BR_operand1    <= PC_dec_sig;
+                    BR_operand1    <= PC;
                     BR_operand2    <= disp1formatted_sig;
                     BR_addr        <= BR_Adder_sig;
                     L_op           <= (others => '0');
@@ -315,7 +315,7 @@ begin
                     In_En          <= '0';
                     BR_En          <= '1';
                     BR_Op          <= "01";
-                    BR_operand1    <= PC_dec_sig;
+                    BR_operand1    <= PC;
                     BR_operand2    <= disp1formatted_sig;
                     BR_addr        <= BR_Adder_sig;
                     L_op           <= (others => '0');
