@@ -429,6 +429,7 @@ architecture behavioral of CONTROL is
         signal EX_console_imm       : std_logic_vector (15 downto 0);
         signal EX_MEM_WR            : std_logic;
         signal EX_MEM_RD            : std_logic;
+        signal CONSOLE_wea          : std_logic;
                   
 begin
     console_display : console
@@ -533,10 +534,10 @@ begin
     -- Text console display memory access signals ( clk is the processor clock )
     --
     
-        clk => '0',
-        addr_write => x"0000",
-        data_in => x"0000",
-        en_write => '0',
+        clk => Clk,
+        addr_write => EX_MEM_RW_data_Out,
+        data_in => EX_MEM_MEM_din_Out,
+        en_write => CONSOLE_wea,
     
     --
     -- Video related signals
@@ -707,8 +708,7 @@ begin
             --EX_console_imm <= EX_OP_sig (7 downto 0)& "00000000";
         --else
             --EX_console_imm <= (others => '0');    
-        --end if;
-
+        --end if
         
     end process Console_logic;    
    
@@ -757,9 +757,19 @@ begin
     begin
         -- determine if we can set write memory Enable
         if EX_MEM_L_op_Out = "101" then -- store
-            RAM_wea(0) <= '1';
+            if EX_MEM_RW_data_Out >= X"0800" and EX_MEM_RW_data_Out <= X"0FFF" then 
+                RAM_wea(0) <= '1';
+                CONSOLE_wea <= '0';
+            elsif EX_MEM_RW_data_Out >= X"FC00" and EX_MEM_RW_data_Out <= X"FDFF" then
+                CONSOLE_wea <= '1';
+                RAM_wea(0) <= '0';
+            else
+                RAM_wea(0) <= '0';
+                CONSOLE_wea <= '0';    
+            end if;
         else 
             RAM_wea(0) <= '0';
+            CONSOLE_wea <= '0';
         end if;
         
         if EX_MEM_L_op_In = "101" then -- set for store on console
