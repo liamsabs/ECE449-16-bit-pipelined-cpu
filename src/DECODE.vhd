@@ -36,7 +36,16 @@ entity DECODE is
         FW_B_En        : in std_logic; -- input to be used to determine if forwarding RB
         -- Memory 
         L_op           : out std_logic_vector (2 downto 0); -- '000' L NOOP,'001' for MOV, '01x' LoadImm LSB is m.1.,'100' LOAD, and '101' STORE
-        L_imm          : out std_logic_vector (7 downto 0) -- immediate used for Load Imm
+        L_imm          : out std_logic_vector (7 downto 0); -- immediate used for Load Imm
+        -- Register Monitoring
+        R0             : out std_logic_vector (15 downto 0);
+        R1             : out std_logic_vector (15 downto 0);
+        R2             : out std_logic_vector (15 downto 0);
+        R3             : out std_logic_vector (15 downto 0);
+        R4             : out std_logic_vector (15 downto 0);
+        R5             : out std_logic_vector (15 downto 0);
+        R6             : out std_logic_vector (15 downto 0);
+        R7             : out std_logic_vector (15 downto 0) 
     );
 end DECODE;
 
@@ -44,17 +53,25 @@ architecture behavioral of DECODE is
 
 -- Componenents
 component register_file is
-    port (
-    rst : in std_logic; clk: in std_logic;
-    --read signals
-    rd_index1: in std_logic_vector(2 downto 0); 
-    rd_index2: in std_logic_vector(2 downto 0); 
-    rd_data1: out std_logic_vector(15 downto 0); 
-    rd_data2: out std_logic_vector(15 downto 0);
-    --write signals
-    wr_index: in std_logic_vector(2 downto 0); 
-    wr_data: in std_logic_vector(15 downto 0); 
-    wr_enable: in std_logic
+    port(rst : in std_logic; clk: in std_logic;
+        --read signals
+        rd_index1: in std_logic_vector(2 downto 0); 
+        rd_index2: in std_logic_vector(2 downto 0); 
+        rd_data1: out std_logic_vector(15 downto 0); 
+        rd_data2: out std_logic_vector(15 downto 0);
+        --write signals
+        wr_index: in std_logic_vector(2 downto 0); 
+        wr_data: in std_logic_vector(15 downto 0);
+        wr_enable: in std_logic;
+        -- Register File Outputs
+        R0 : out std_logic_vector (15 downto 0);
+        R1 : out std_logic_vector (15 downto 0);
+        R2 : out std_logic_vector (15 downto 0);
+        R3 : out std_logic_vector (15 downto 0);
+        R4 : out std_logic_vector (15 downto 0);
+        R5 : out std_logic_vector (15 downto 0);
+        R6 : out std_logic_vector (15 downto 0);
+        R7 : out std_logic_vector (15 downto 0)
     );
 end component;
 
@@ -90,7 +107,7 @@ signal RB_data_sig        :  std_logic_vector (15 downto 0); -- RB data from reg
 signal RB_data_sig_FW     :  std_logic_vector (15 downto 0); -- RB data with forwarding logic applied
 signal RB_addr_sig        :  std_logic_vector (2 downto 0); -- RB address inputted to register file and outputted for forwarding
 -- Branching Signals
-signal PC_dec_sig         : std_logic_vector (15 downto 0); -- signal representing PC where 2 been subtracted
+signal PC_incr_sig         : std_logic_vector (15 downto 0); -- signal representing PC where 2 been subtracted
 signal disp1_sig          : std_logic_vector (8 downto 0); -- bits from IR for disp1 to be formatted
 signal disp1formatted_sig : std_logic_vector (15 downto 0); -- disp1 post formatting (sign extended to 16 bits)
 signal disps_sig          : std_logic_vector (5 downto 0); -- bits from IR for disps to be formatted
@@ -110,7 +127,15 @@ begin
         rd_data2  => RB_data_sig,
         wr_index  => WB_addr,
         wr_data   => WB_data,
-        wr_enable => WB_En
+        wr_enable => WB_En,
+        R0 => R0, 
+        R1 => R1, 
+        R2 => R2, 
+        R3 => R3,
+        R4 => R4, 
+        R5 => R5, 
+        R6 => R6,
+        R7 => R7
         );
     b1disp : B1dispformatter port map ( -- performs *2 and sign extend for BRR
         disp1 => disp1_sig,
@@ -120,11 +145,11 @@ begin
         disps => disps_sig,
         dispsformatted => dispsformatted_sig
     );
-    PC_dec : FullAdder_16bit port map ( -- adder used to decrement PC when used for branching
+    PC_incr : FullAdder_16bit port map ( -- adder so BR SUB stores PC+2 instead of PC
         A => PC,
-        B => X"FFFE", -- add -2 so that PC instead of PC+2
+        B => X"0002", -- add -
         Cin => '0',
-        Sum => PC_dec_sig
+        Sum => PC_incr_sig
     );
     B_adder : FullAdder_16bit port map ( -- adder used to compute branch address
         A => BR_operand1,
@@ -141,14 +166,14 @@ begin
     RA_addr <= RA_addr_sig;
     RB_addr <= RB_addr_sig;           
     -- Branching signal Assignment
-    BR_sub_PC <= PC; 
+    BR_sub_PC <= PC_incr_sig; 
     -- Branch Formatting
     disp1_sig <= ID_IR_in (8 downto 0);
     disps_sig <= ID_IR_in (5 downto 0);
     -- Immediate Value
     L_imm    <= ID_IR_in (7 downto 0);
     
-    decode_process : process (ID_Reset, opCode, ID_IR_in, RA_data_sig_FW, PC_dec_sig, disp1formatted_sig, BR_Adder_sig, dispsformatted_sig, BR_operand1, BR_operand2)
+    decode_process : process (ID_Reset, opCode, ID_IR_in, RA_data_sig_FW, PC_incr_sig, disp1formatted_sig, BR_Adder_sig, dispsformatted_sig, BR_operand1, BR_operand2)
     begin
         if ID_Reset = '1' then
             ALU_op         <= (others => '0');
@@ -262,7 +287,7 @@ begin
                     IN_En          <= '0';
                     BR_En          <= '1';
                     BR_Op          <= "00";
-                    BR_operand1    <= PC_dec_sig;
+                    BR_operand1    <= PC;
                     BR_operand2    <= disp1formatted_sig;
                     BR_addr        <= BR_Adder_sig;
                     L_op           <= (others => '0');
@@ -276,7 +301,7 @@ begin
                     In_En          <= '0';                   
                     BR_En          <= '1';
                     BR_Op          <= "10";
-                    BR_operand1    <= PC_dec_sig;
+                    BR_operand1    <= PC;
                     BR_operand2    <= disp1formatted_sig;
                     BR_addr        <= BR_Adder_sig;
                     L_op           <= (others => '0');
@@ -290,7 +315,7 @@ begin
                     In_En          <= '0';
                     BR_En          <= '1';
                     BR_Op          <= "01";
-                    BR_operand1    <= PC_dec_sig;
+                    BR_operand1    <= PC;
                     BR_operand2    <= disp1formatted_sig;
                     BR_addr        <= BR_Adder_sig;
                     L_op           <= (others => '0');
@@ -392,21 +417,7 @@ begin
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
                     L_op           <= "101";
-                when "0010010" => -- MOV
-                    ALU_op         <= (others => '0');
-                    shiftAmt       <= (others => '0');
-                    RA_Addr_sig    <= ID_IR_in (5 downto 3);
-                    RB_Addr_sig    <= (others => '0');
-                    RW_addr        <= ID_IR_in (8 downto 6);
-                    RW_En          <= '1';
-                    In_En          <= '0';
-                    BR_En          <= '0';
-                    BR_Op          <= "00";
-                    BR_operand1    <= (others=>'0');
-                    BR_operand2    <= (others=>'0');
-                    BR_addr        <= (others=>'0');
-                    L_op           <= "001";
-                when "0010011" => -- LOADIMM
+                when "0010010" => -- LOADIMM
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');
                     RA_Addr_sig    <= "111";
@@ -419,7 +430,21 @@ begin
                     BR_operand1    <= (others=>'0');
                     BR_operand2    <= (others=>'0');
                     BR_addr        <= (others=>'0');
-                    L_op           <= "01" & ID_IR_in(8);  
+                    L_op           <= "01" & ID_IR_in(8);
+                when "0010011" => -- MOV
+                    ALU_op         <= (others => '0');
+                    shiftAmt       <= (others => '0');
+                    RA_Addr_sig    <= ID_IR_in (5 downto 3);
+                    RB_Addr_sig    <= (others => '0');
+                    RW_addr        <= ID_IR_in (8 downto 6);
+                    RW_En          <= '1';
+                    In_En          <= '0';
+                    BR_En          <= '0';
+                    BR_Op          <= "00";
+                    BR_operand1    <= (others=>'0');
+                    BR_operand2    <= (others=>'0');
+                    BR_addr        <= (others=>'0');
+                    L_op           <= "001";  
                 when others => 
                     ALU_op         <= (others => '0');
                     shiftAmt       <= (others => '0');

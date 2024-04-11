@@ -5,6 +5,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity EXECUTE is
     port (
+         Reset          : in std_logic; -- Reset for flags
+         Clk            : in std_logic; -- Clk for latches 
          -- ALU Args
          ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
          shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
@@ -31,9 +33,9 @@ entity EXECUTE is
          IN_data        : in std_logic_vector (15 downto 0);
          IN_En          : in std_logic;
          -- Memory
-         L_op_in      : in std_logic_vector (2 downto 0);
-         L_op_out     : out std_logic_vector (2 downto 0);
-         L_imm        : in std_logic_vector (7 downto 0);
+         L_op_in        : in std_logic_vector (2 downto 0);
+         L_op_out       : out std_logic_vector (2 downto 0);
+         L_imm          : in std_logic_vector (7 downto 0);
          RB_data_out    : out std_logic_vector (15 downto 0)
 
      );
@@ -48,7 +50,7 @@ architecture Behavioral of EXECUTE is
             shiftAmt        : in std_logic_vector(3 downto 0);      -- Shift amount specified in A3 
             ALU_op          : in std_logic_vector(2 downto 0);      -- ALU op code from decode stage
             Result          : out std_logic_vector(15 downto 0);    -- ALU Result Output
-            Resultupper    : out std_logic_vector(15 downto 0)
+            Resultupper    : out std_logic_vector(15 downto 0):= (others => '0')
         );
     end component;
 
@@ -81,33 +83,43 @@ architecture Behavioral of EXECUTE is
         -- Memory Signals
         L_op_out <= L_op_in;
         RB_data_out <= RB_data;
+        
+        -- Flags Process
+        FLAGS : process (ALU_op, RA_data, ALU_Result_upper )
+        begin
+            if Reset = '1' then
+                Z_sig <= '0';
+                N_sig <= '0';
+                Moverflow <= '0';
+            elsif rising_edge(Clk) then
+                if ALU_op = "111" then
+                 -- Zero Flag
+                    if RA_data = X"0000" then
+                        Z_sig <= '1';
+                    else
+                         Z_sig <= '0';
+                    end if;
+                    -- Negative Flag
+                    if RA_data(15) = '1' then
+                        N_sig <= '1';
+                    else
+                        N_sig <= '0';
+                    end if;
+                elsif ALU_op = "011" then
+                    if alu_result_upper /= X"0000" and alu_result_upper /= X"1111"  then
+                    Moverflow <= '1';
+                    else
+                    Moverflow <= '0';
+                    end if;
+                end if;
+            end if;
+        end process FLAGS;
                
-        -- Setting Flags
-        process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC, IN_En, In_data, ALU_Result, L_op_in, L_imm)
+        -- Branch choice process
+        BRANCH : process(ALU_op, Z_sig, N_sig, RA_data, ALU_Result_upper, BR_En, BR_op, BR_sub_PC)
         begin 
             case BR_en is
                 when '0' =>
-                    -- Setting Flags
-                    if ALU_op = "111" then
-                        -- Zero Flag
-                        if RA_data = X"0000" then 
-                            Z_sig <= '1';
-                        else 
-                            Z_sig <= '0';
-                        end if;
-                        -- Negative Flag
-                        if RA_data(15) = '1' then 
-                            N_sig <= '1';
-                        else 
-                            N_sig <= '0';
-                        end if;  
-                    elsif ALU_op = "011" then
-                        if alu_result_upper = X"0000" or alu_result_upper = X"FFFF" then
-                            Moverflow <= '1';
-                        else 
-                            Moverflow <= '0';
-                        end if;
-                    end if;
                     BR_CTRL <= '0'; -- set to no branching by default    
                 when '1' => -- branch instruction, check branch opcode 
                     case BR_op is
@@ -127,27 +139,25 @@ architecture Behavioral of EXECUTE is
                             end if;
                     end case;
             end case;
-            
+        end process BRANCH;
+         
+        RW_DATA : process (BR_op, BR_sub_PC, IN_data, RA_data, L_imm, ALU_Result)
+        begin   
             -- WB/Mem Data choice
             if BR_op = "11" then -- BR_SUB
                 RW_data_out <= BR_sub_PC;
             elsif IN_En = '1' then -- In Instruction
-                RW_data_out <= IN_data;
-            else 
-                RW_data_out <= ALU_Result;
-            end if;
-            
-            if L_op_in(2) = '1' then                  -- LOAD / STORE
+                RW_data_out <= IN_data;      
+            elsif L_op_in = "100" or L_op_in = "101" or L_op_in = "001" then  -- LOAD / STORE or MOV
                 RW_data_out <= RA_data;
-            elsif L_op_in(2 downto 1) = "01" then     -- LOAD IMM
+            elsif L_op_in = "010" or L_op_in = "011" then     -- LOAD IMM
                 if L_op_in(0) = '0' then
                     RW_data_out <= RA_data(15 downto 8) & L_imm;
                 else
                     RW_data_out <= L_imm & RA_data(7 downto 0);
                 end if;
-            elsif L_op_in = "001" then
-                RW_data_out <= RA_data;                 -- MOV
+            else
+                RW_data_out <= ALU_Result;
             end if;
-            
-        end process;
+        end process RW_DATA;
 end Behavioral;

@@ -7,14 +7,13 @@ entity FETCH is
         Reset_Ex        : in std_logic;
         Reset_Load      : in std_logic;                         -- Resets PC to [val?]
         Br_addr         : in std_logic_vector(15 downto 0);     -- Branch address
-        Br_CTRL         : in std_logic;                         -- input signal for PC MUX
-        Test_En         : in std_logic;                         -- used when we are testing in the Testbench [TO BE REMOVED]
-        IR_in           : in std_logic_vector(15 downto 0);     -- hardcoded Instruction in Value for behavioral sim [TO BE REMOVED]
+        Br_CTRL         : in std_logic;                        -- used when we are testing in the Testbench [TO BE REMOVED]
         IR_out          : out std_logic_vector(15 downto 0);    -- recieved from memory then outputted to IF/ID register
         PC_out          : out std_logic_vector(15 downto 0);     -- PC for decoder
         NPC_out         : out std_logic_vector (15 downto 0);
         IR_ROM          : in std_logic_vector (15 downto 0);
-        IR_RAM          : in std_logic_vector (15 downto 0)
+        IR_RAM          : in std_logic_vector (15 downto 0);
+        Call_NOP        : in std_logic
         
     );
 end FETCH;
@@ -32,37 +31,38 @@ architecture behavioral of FETCH is
 
     signal PC       : std_logic_vector (15 downto 0) := (others => '0');    -- program counter
     signal IR_sig   : std_logic_vector (15 downto 0) := (others => '0');    -- instruction register
-    signal adder_PC : std_logic_vector (15 downto 0) := (others => '0');    -- regular PC incremented with adder    
+    signal adder_NPC : std_logic_vector (15 downto 0) := (others => '0');    -- regular PC incremented with adder    
 
     begin      
-        Add : FullAdder_16bit port map (A => PC, B=> X"0002", Cin => '0', Sum => adder_PC);
-        IR_out <= IR_in;
+        Add : FullAdder_16bit port map (A => PC, B=> X"0002", Cin => '0', Sum => adder_NPC);
         PC_Out <= PC (15 downto 1) & '0';
         
-        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_PC, Br_addr, IR_sig, clk)
+        PC_process : process (Clk, Reset_Load, Reset_Ex, Br_CTRL, BR_addr, adder_NPC, Br_addr, IR_sig, clk, Call_NOP)
             variable NPC_var : std_logic_vector(15 downto 0);
         begin
            
             if Reset_Load = '1' then
-                NPC_var := X"0000"; -- to be changed [Location of ROM] 
+                NPC_var := X"0002"; -- to be changed [Location of ROM] 
             elsif Reset_Ex = '1' then
-                NPC_var := X"0400"; -- to be changed [location of RAM] 
+                NPC_var := X"0000"; -- to be changed [location of RAM]
+            elsif Call_NOP = '1' then
+                NPC_var := PC;
             elsif Br_CTRL = '1' then
-                NPC_var := BR_addr; -- branch address
+                 NPC_var := BR_addr; -- branch address
             else 
-                NPC_var := adder_PC; -- PC incrementor
+                 NPC_var := adder_NPC; -- PC incrementor
             end if;
-            NPC_Out <= NPC_var;
-            if falling_edge(Clk) then
-                PC <= NPC_var; 
-            end if;    
+                NPC_Out <= NPC_var(15 downto 1) & '0';
+                
+             if rising_edge(Clk) then -- setting new PC value
+                    PC <= NPC_var; 
+             end if; 
+            
         end process PC_process;
     
-        Memory_process : process (PC, IR_in, IR_RAM, IR_ROM, Test_EN)
+        Memory_process : process (PC, IR_RAM, IR_ROM)
         begin
-        if Test_En = '1' then
-        IR_out <= IR_In;
-        elsif PC(10) = '1' then
+        if PC(11) = '1' then
         IR_out <= IR_RAM;
         else
         IR_out <= IR_ROM;

@@ -12,7 +12,18 @@ rd_data1: out std_logic_vector(15 downto 0);
 rd_data2: out std_logic_vector(15 downto 0);
 --write signals
 wr_index: in std_logic_vector(2 downto 0); 
-wr_data: in std_logic_vector(15 downto 0); wr_enable: in std_logic);
+wr_data: in std_logic_vector(15 downto 0);
+wr_enable: in std_logic;
+-- Register File Outputs
+R0 : out std_logic_vector (15 downto 0);
+R1 : out std_logic_vector (15 downto 0);
+R2 : out std_logic_vector (15 downto 0);
+R3 : out std_logic_vector (15 downto 0);
+R4 : out std_logic_vector (15 downto 0);
+R5 : out std_logic_vector (15 downto 0);
+R6 : out std_logic_vector (15 downto 0);
+R7 : out std_logic_vector (15 downto 0)
+);
 end register_file;
 
 architecture behavioural of register_file is
@@ -23,7 +34,7 @@ signal reg_file : reg_array; begin
 --write operation 
 process(clk)
 begin
-   if(clk='0' and clk'event) then if(rst='1') then
+   if(rising_edge(clk)) then if(rst='1') then
       for i in 0 to 7 loop
          reg_file(i)<= (others => '0'); 
       end loop;
@@ -61,4 +72,13 @@ reg_file(4) when(rd_index2="100") else
 reg_file(5) when(rd_index2="101") else
 reg_file(6) when(rd_index2="110") else reg_file(7);
 
+-- Register File Surveying
+ R0 <= reg_file(0);
+ R1 <= reg_file(1);
+ R2 <= reg_file(2);
+ R3 <= reg_file(3);
+ R4 <= reg_file(4);
+ R5 <= reg_file(5);
+ R6 <= reg_file(6);
+ R7 <= reg_file(7);
 end behavioural;
