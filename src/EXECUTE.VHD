@@ -5,39 +5,38 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity EXECUTE is
     port (
-         Reset          : in std_logic; -- Reset for flags
-         Clk            : in std_logic; -- Clk for latches 
-         -- ALU Args
-         ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
-         shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
-         RA_data        : in std_logic_vector (15 downto 0);         -- Data for ALU A
-         RB_data        : in std_logic_vector (15 downto 0);         -- Data for ALU B
-         -- Register Write Data to propogate through
-         RW_addr_in     : in std_logic_vector (2 downto 0);          -- IN Addr for WB stage
-         RW_En_in       : in std_logic;                              -- EN for WB stage
-         RW_addr_out    : out std_logic_vector (2 downto 0);         -- OUT Addr for WB stage
-         RW_En_out      : out std_logic;                             -- OUT EN for WB stage
-         RW_data_out    : out std_logic_vector (15 downto 0);        -- data to be written back
-         -- Flags to be set
-         Moverflow      : out std_logic; -- Multiplcation overflow flag output for controller
-         Z_flag         : out std_logic; -- Zero flag used for testing
-         N_flag         : out std_logic; -- Negative flag used for testing
-         -- Branching inputs
-         BR_En          : in std_logic;
-         BR_op          : in std_logic_vector(1 downto 0);       
-         BR_CTRL        : out std_logic;
-         BR_addr_in     : in std_logic_vector(15 downto 0);
-         BR_addr_out    : out std_logic_vector(15 downto 0);
-         BR_sub_PC      : in std_logic_vector(15 downto 0);
-         -- I/O Handling
-         IN_data        : in std_logic_vector (15 downto 0);
-         IN_En          : in std_logic;
-         -- Memory
-         L_op_in        : in std_logic_vector (2 downto 0);
-         L_op_out       : out std_logic_vector (2 downto 0);
-         L_imm          : in std_logic_vector (7 downto 0);
-         RB_data_out    : out std_logic_vector (15 downto 0)
-
+            Reset          : in std_logic;  -- Reset for flags
+            Clk            : in std_logic; -- Clk for latches
+            -- ALU Args
+            ALU_op         : in std_logic_vector (2 downto 0);          -- OPCODE for ALU
+            shiftAmt       : in std_logic_vector (3 downto 0);          -- Amount to shift by
+            RA_data        : in std_logic_vector (15 downto 0);         -- Data for ALU A
+            RB_data        : in std_logic_vector (15 downto 0);         -- Data for ALU B
+            -- Register Write Data to propogate through
+            RW_addr_in     : in std_logic_vector (2 downto 0);          -- IN Addr for WB stage
+            RW_En_in       : in std_logic;                              -- EN for WB stage
+            RW_addr_out    : out std_logic_vector (2 downto 0);         -- OUT Addr for WB stage
+            RW_En_out      : out std_logic;                             -- OUT EN for WB stage
+            RW_data_out    : out std_logic_vector (15 downto 0);        -- data to be written back
+            -- Flags to be set
+            Moverflow      : out std_logic; -- Multiplcation overflow flag output for controller
+            Z_flag         : out std_logic; -- Zero flag used for testing
+            N_flag         : out std_logic; -- Negative flag used for testing
+            -- Branching inputs
+            BR_En          : in std_logic; -- Enable branch processing logic
+            BR_op          : in std_logic_vector(1 downto 0); -- Branch opcode      
+            BR_CTRL        : out std_logic; -- Output indicating if branch taken or not
+            BR_addr_in     : in std_logic_vector(15 downto 0); -- branch address in
+            BR_addr_out    : out std_logic_vector(15 downto 0); -- branch address out
+            BR_sub_PC      : in std_logic_vector(15 downto 0); -- signal indicating BR SUB instr
+            -- I/O Handling
+            IN_data        : in std_logic_vector (15 downto 0); -- data inputted from port
+            IN_En          : in std_logic; -- Enable in data to propogate
+            -- Memory
+            L_op_in      : in std_logic_vector (2 downto 0); -- Load OP in
+            L_op_out     : out std_logic_vector (2 downto 0); -- Load OP out
+            L_imm        : in std_logic_vector (7 downto 0); -- immediate for load imm
+            RB_data_out    : out std_logic_vector (15 downto 0) -- RB data to be used as Din to RAM
      );
 end EXECUTE;
 
